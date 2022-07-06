@@ -10,6 +10,8 @@ var (
 	shutdownSignals      = []os.Signal{os.Interrupt}
 )
 
+//  SetupSignalHandler creates and returns a channel. The channel will be closed up on receiving
+// the interrupt signal (Ctrl-C), if a second interrupt signal is received, the calling program is forced to terminate.
 func SetupSignalHandler() (stopCh <-chan struct{}) {
 	close(onlyOneSignalHandler) // panics when called twice
 
