@@ -20,7 +20,7 @@ func SetupSignalHandler() (stopCh <-chan struct{}) {
 		<-c
 		close(stop)
 		<-c
-		os.Exit(1) // second signal. Exit directly.
+		os.Exit(1)
 	}()
 
 	return stop
