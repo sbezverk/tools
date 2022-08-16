@@ -36,7 +36,7 @@ func (i *item) Key() string {
 
 type Manager interface {
 	Add(Storable) error
-	Remove(Storable)
+	Remove(Storable) error
 	List() []Storable
 	Get(string) Storable
 	Stop()
@@ -72,7 +72,7 @@ func (s *itemStore) Add(i Storable) error {
 	return <-err
 }
 
-func (s *itemStore) Remove(i Storable) {
+func (s *itemStore) Remove(i Storable) error {
 	err := make(chan error)
 	s.opCh <- storeCh{
 		op:   removeItem,
@@ -80,7 +80,7 @@ func (s *itemStore) Remove(i Storable) {
 		err:  err,
 	}
 	// Just wait for the operation to complete, no result is needed
-	<-err
+	return <-err
 }
 
 func (s *itemStore) Get(key string) Storable {
@@ -95,6 +95,9 @@ func (s *itemStore) Get(key string) Storable {
 		replyCh: repl,
 	}
 	r := <-repl
+	if len(r.item) == 0 {
+		return nil
+	}
 
 	return r.item[0]
 }
@@ -130,6 +133,10 @@ func (s *itemStore) manager() {
 				items[msg.item[0].Key()] = msg.item[0]
 				msg.err <- nil
 			case removeItem:
+				if _, ok := items[msg.item[0].Key()]; !ok {
+					msg.err <- ErrNotFound
+					continue
+				}
 				delete(items, msg.item[0].Key())
 				msg.err <- nil
 			case getItem:
@@ -161,7 +168,7 @@ func (s *itemStore) manager() {
 
 // NewStore returns a new instance of a store, any object which is compatible
 // with the interface Storable, can be stored in the store.
-func NewStore() (Manager, error) {
+func NewStore() Manager {
 	s := &itemStore{
 		stopCh: make(chan struct{}),
 		opCh:   make(chan storeCh),
@@ -169,5 +176,5 @@ func NewStore() (Manager, error) {
 	// Starting store manager
 	go s.manager()
 
-	return s, nil
+	return s
 }
