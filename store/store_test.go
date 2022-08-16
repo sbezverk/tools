@@ -40,10 +40,10 @@ func TestRemove(t *testing.T) {
 	s.Add(i2)
 	s.Add(i3)
 
-	if err := s.Remove(i2); err != nil {
+	if err := s.Remove(i2.Key()); err != nil {
 		t.Fatalf("supposed to succeed but failed with error: %+v", err)
 	}
-	if err := s.Remove(i1); err == nil {
+	if err := s.Remove(i1.Key()); err == nil {
 		t.Fatalf("supposed to fail but succeeded")
 	}
 }

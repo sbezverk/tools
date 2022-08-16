@@ -36,7 +36,7 @@ func (i *item) Key() string {
 
 type Manager interface {
 	Add(Storable) error
-	Remove(Storable) error
+	Remove(string) error
 	List() []Storable
 	Get(string) Storable
 	Stop()
@@ -72,11 +72,11 @@ func (s *itemStore) Add(i Storable) error {
 	return <-err
 }
 
-func (s *itemStore) Remove(i Storable) error {
+func (s *itemStore) Remove(key string) error {
 	err := make(chan error)
 	s.opCh <- storeCh{
 		op:   removeItem,
-		item: []Storable{i},
+		item: []Storable{&item{key: key}},
 		err:  err,
 	}
 	// Just wait for the operation to complete, no result is needed
