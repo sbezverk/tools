@@ -52,29 +52,30 @@ type mgrReply struct {
 type storeCh struct {
 	op      storeOp
 	item    []Storable
-	replyCh chan mgrReply
+	replyCh chan *mgrReply
 	err     chan error
 }
 
 type itemStore struct {
 	stopCh chan struct{}
-	opCh   chan storeCh
+	opCh   chan *storeCh
 }
 
 func (s *itemStore) Add(i Storable) error {
 	err := make(chan error)
-	s.opCh <- storeCh{
+	s.opCh <- &storeCh{
 		op:   addItem,
 		item: []Storable{i},
 		err:  err,
 	}
 	// Return the result of the operation
+
 	return <-err
 }
 
 func (s *itemStore) Remove(key string) error {
 	err := make(chan error)
-	s.opCh <- storeCh{
+	s.opCh <- &storeCh{
 		op:   removeItem,
 		item: []Storable{&item{key: key}},
 		err:  err,
@@ -84,8 +85,8 @@ func (s *itemStore) Remove(key string) error {
 }
 
 func (s *itemStore) Get(key string) Storable {
-	repl := make(chan mgrReply)
-	s.opCh <- storeCh{
+	repl := make(chan *mgrReply)
+	s.opCh <- &storeCh{
 		op: getItem,
 		item: []Storable{
 			&item{
@@ -103,8 +104,8 @@ func (s *itemStore) Get(key string) Storable {
 }
 
 func (s *itemStore) List() []Storable {
-	repl := make(chan mgrReply)
-	s.opCh <- storeCh{
+	repl := make(chan *mgrReply)
+	s.opCh <- &storeCh{
 		op:      listItems,
 		replyCh: repl,
 	}
@@ -142,12 +143,13 @@ func (s *itemStore) manager() {
 			case getItem:
 				it, ok := items[msg.item[0].Key()]
 				if !ok {
-					msg.replyCh <- mgrReply{
+					msg.replyCh <- &mgrReply{
 						item: nil,
 						err:  ErrNotFound,
 					}
+					continue
 				}
-				msg.replyCh <- mgrReply{
+				msg.replyCh <- &mgrReply{
 					item: []Storable{it},
 					err:  nil,
 				}
@@ -157,7 +159,7 @@ func (s *itemStore) manager() {
 				for _, item := range items {
 					l[i] = item
 				}
-				msg.replyCh <- mgrReply{
+				msg.replyCh <- &mgrReply{
 					item: l,
 					err:  nil,
 				}
@@ -171,7 +173,7 @@ func (s *itemStore) manager() {
 func NewStore() Manager {
 	s := &itemStore{
 		stopCh: make(chan struct{}),
-		opCh:   make(chan storeCh),
+		opCh:   make(chan *storeCh),
 	}
 	// Starting store manager
 	go s.manager()
