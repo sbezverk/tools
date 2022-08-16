@@ -2,8 +2,6 @@ package store
 
 import (
 	"errors"
-
-	"github.com/golang/glog"
 )
 
 var (
@@ -125,7 +123,6 @@ func (s *itemStore) manager() {
 		case msg := <-s.opCh:
 			switch msg.op {
 			case addItem:
-				glog.V(6).Infof("Adding item: %s", msg.item[0].Key())
 				if _, ok := items[msg.item[0].Key()]; ok {
 					msg.err <- ErrAlreadyExist
 					continue
@@ -133,11 +130,9 @@ func (s *itemStore) manager() {
 				items[msg.item[0].Key()] = msg.item[0]
 				msg.err <- nil
 			case removeItem:
-				glog.V(6).Infof("Removing item: %s", msg.item[0].Key())
 				delete(items, msg.item[0].Key())
 				msg.err <- nil
 			case getItem:
-				glog.V(6).Infof("Getting item: %s", msg.item[0].Key())
 				it, ok := items[msg.item[0].Key()]
 				if !ok {
 					msg.replyCh <- mgrReply{
