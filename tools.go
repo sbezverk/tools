@@ -85,6 +85,7 @@ func URLAddrValidation(addr string) error {
 		if net.ParseIP(host) == nil {
 			return fmt.Errorf("fail to parse host part of address")
 		}
+		return fmt.Errorf("failure in DNS lookup for host: %v", host)
 	}
 	np, err := strconv.Atoi(port)
 	if err != nil {
