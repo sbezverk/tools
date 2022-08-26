@@ -58,6 +58,7 @@ func HostAddrValidator(addr string) error {
 		if net.ParseIP(host) == nil {
 			return fmt.Errorf("fail to parse host part of address")
 		}
+		return fmt.Errorf("failure in DNS lookup for host: %v", host)
 	}
 	np, err := strconv.Atoi(port)
 	if err != nil {
@@ -75,23 +76,5 @@ func URLAddrValidation(addr string) error {
 	if err != nil {
 		return err
 	}
-	host, port, _ := net.SplitHostPort(endpoint.Host)
-	if host == "" || port == "" {
-		return fmt.Errorf("host or port cannot be ''")
-	}
-	// Try to resolve if the hostname was used in the address
-	if ip, err := net.LookupIP(host); err != nil || ip == nil {
-		// Check if IP address was used in address instead of a host name
-		if net.ParseIP(host) == nil {
-			return fmt.Errorf("fail to parse host part of address")
-		}
-	}
-	np, err := strconv.Atoi(port)
-	if err != nil {
-		return fmt.Errorf("fail to parse port with error: %w", err)
-	}
-	if np == 0 || np > math.MaxUint16 {
-		return fmt.Errorf("the value of port is invalid")
-	}
-	return nil
+    return HostAddrValidator(endpoint.Host)
 }

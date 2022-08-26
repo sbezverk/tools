@@ -27,8 +27,7 @@ func TestMessageHex(t *testing.T) {
 			}
 		})
 	}
-}
-
+} 
 func TestConvertToHex(t *testing.T) {
 	for b := 0; b <= 0xff; b++ {
 		s := ConvertToHex(byte(b))
@@ -37,4 +36,79 @@ func TestConvertToHex(t *testing.T) {
 			t.Errorf("original %d and decoded %d values do not match", b, v)
 		}
 	}
+}
+
+func TestHostAddrValidator(t *testing.T) {
+    tests := []struct {
+        name string
+        input string
+        fail bool
+    }{
+        {
+	        name: "valid ipv4 and port",
+	        input: "1.1.1.1:8080",
+	        fail: false,
+        },
+        {
+	        name: "valid ipv4 and mo port",
+	        input: "1.1.1.1",
+	        fail: true,
+        },
+        {
+	        name: "valid dns and port",
+	        input: "localhost:8080",
+	        fail: false,
+        },
+        {
+	        name: "valid dns and no port",
+	        input: "localhost",
+	        fail: true,
+        },
+        {
+	        name: "invalid dns; valid port",
+	        input: "gbbbbbbbbbbb.com:8080",
+	        fail: true,
+        },
+    }
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            err := HostAddrValidator(tt.input)
+            if err != nil && !tt.fail {
+                t.Fatalf("supposed to succeed but fail with error: %+v", err)
+            }
+            if err == nil && tt.fail {
+                t.Fatalf("supposed to fail but succeeded")
+            }
+        })
+    }
+}
+
+func TestURLAddrValidation(t *testing.T) {
+    tests := []struct {
+        name string
+        input string
+        fail bool
+    }{
+        {
+	        name: "valid URL with ipv4 and port",
+	        input: "http://1.1.1.1:8080",
+	        fail: false,
+        },
+        {
+	        name: "invalid URL",
+	        input: "1.1.1.1:8080",
+	        fail: true,
+        },
+    }
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            err := URLAddrValidation(tt.input)
+            if err != nil && !tt.fail {
+                t.Fatalf("supposed to succeed but fail with errorL %+v", err)
+            }
+            if err == nil && tt.fail {
+                t.Fatalf("supposed to fail but succeeded")
+            }
+        })
+    }
 }
