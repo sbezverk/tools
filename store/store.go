@@ -69,7 +69,6 @@ func (s *itemStore) Add(i Storable) error {
 		err:  err,
 	}
 	// Return the result of the operation
-
 	return <-err
 }
 
@@ -154,10 +153,9 @@ func (s *itemStore) manager() {
 					err:  nil,
 				}
 			case listItems:
-				l := make([]Storable, len(items))
-				i := 0
+				l := make([]Storable, 0)
 				for _, item := range items {
-					l[i] = item
+					l = append(l, item)
 				}
 				msg.replyCh <- &mgrReply{
 					item: l,
