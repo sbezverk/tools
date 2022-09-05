@@ -9,8 +9,6 @@ import (
 
 	"github.com/golang/glog"
 	feeder "github.com/sbezverk/tools/telemetry_feeder"
-	"github.com/sbezverk/tools/telemetry_feeder/proto/telemetry"
-	"google.golang.org/protobuf/proto"
 )
 
 type offFeeder struct {
@@ -52,14 +50,9 @@ func (o *offFeeder) retrieve() {
 				return
 			}
 			f := &feeder.Feed{}
-			m := &telemetry.Telemetry{}
-			err := proto.Unmarshal(b, m)
-			if err == nil {
-				f.TelemetryMsg = m
-			} else {
-				err = fmt.Errorf("%+v %w", feeder.ErrUnmarshalTelemetryMsg, err)
-			}
-			f.Err = err
+			f.TelemetryMsg = make([]byte, len(b))
+			copy(f.TelemetryMsg, b)
+			f.Err = nil
 			// Sending recieved Telemetry message for processing
 			o.feed <- f
 		}

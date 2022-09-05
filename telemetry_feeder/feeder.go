@@ -2,8 +2,6 @@ package telemetry_feeder
 
 import (
 	"errors"
-
-	"github.com/sbezverk/tools/telemetry_feeder/proto/telemetry"
 )
 
 var (
@@ -12,7 +10,7 @@ var (
 )
 
 type Feed struct {
-	TelemetryMsg *telemetry.Telemetry
+	TelemetryMsg []byte
 	Err          error
 }
 
