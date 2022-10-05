@@ -6,6 +6,8 @@ import (
 	feeder "github.com/sbezverk/tools/telemetry_feeder"
 	"github.com/sbezverk/tools/telemetry_feeder/proto/mdtdialout"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -26,8 +28,7 @@ func (srv *grpcSrv) GetFeed() chan *feeder.Feed {
 
 func (srv *grpcSrv) Stop() {
 	srv.gSrv.Stop()
-	srv.stopCh <- struct{}{}
-	<-srv.stopCh
+	close(srv.stopCh)
 	srv.conn.Close()
 }
 
@@ -50,16 +51,19 @@ func New(addr string) (feeder.Feeder, error) {
 }
 
 func (srv *grpcSrv) MdtDialout(session mdtdialout.GRPCMdtDialout_MdtDialoutServer) error {
-	return srv.worker(session)
-}
-
-func (srv *grpcSrv) worker(session mdtdialout.GRPCMdtDialout_MdtDialoutServer) error {
 	infoCh := make(chan *mdtdialout.MdtDialoutArgs)
 	errCh := make(chan error)
 	defer func() {
 		close(infoCh)
 		close(errCh)
 	}()
+
+	return srv.worker(session, infoCh, errCh)
+}
+
+func (srv *grpcSrv) worker(session mdtdialout.GRPCMdtDialout_MdtDialoutServer,
+	infoCh chan *mdtdialout.MdtDialoutArgs,
+	errCh chan error) error {
 	go func(iCh chan *mdtdialout.MdtDialoutArgs, eCh chan error) {
 		for {
 			info, err := session.Recv()
@@ -67,15 +71,20 @@ func (srv *grpcSrv) worker(session mdtdialout.GRPCMdtDialout_MdtDialoutServer) e
 				eCh <- err
 				return
 			}
-			// Got telemetry info, sending it to the parent for further processing
-			if info != nil {
-				iCh <- info
+			// Before sending the message, check if gRPC session has not been canceled
+			if status.Code(session.Context().Err()) == codes.Canceled {
+				return
 			}
+			// Got telemetry info, sending it to the parent for further processing
+			iCh <- info
 		}
 	}(infoCh, errCh)
 	for {
 		select {
 		case msg := <-infoCh:
+			if msg == nil {
+				continue
+			}
 			f := &feeder.Feed{}
 			f.TelemetryMsg = make([]byte, len(msg.Data))
 			copy(f.TelemetryMsg, msg.Data)
@@ -89,7 +98,6 @@ func (srv *grpcSrv) worker(session mdtdialout.GRPCMdtDialout_MdtDialoutServer) e
 			}
 			return err
 		case <-srv.stopCh:
-			close(srv.stopCh)
 			return nil
 		}
 	}
