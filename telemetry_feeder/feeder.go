@@ -2,6 +2,7 @@ package telemetry_feeder
 
 import (
 	"errors"
+	"net"
 )
 
 var (
@@ -10,6 +11,7 @@ var (
 )
 
 type Feed struct {
+	ProducerAddr net.Addr
 	TelemetryMsg []byte
 	Err          error
 }
