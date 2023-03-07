@@ -48,7 +48,7 @@ func New(addr string) (feeder.Feeder, error) {
 		gSrv: grpc.NewServer(
 			grpc.MaxRecvMsgSize(MaxRcvMsgSize),
 			grpc.KeepaliveParams(keepalive.ServerParameters{Time: time.Second * 30, Timeout: time.Second * 10}),
-			grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{MinTime: time.Second * 10, PermitWithoutStream: true}),
+			//			grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{MinTime: time.Second * 10, PermitWithoutStream: true}),
 		),
 	}
 	mdtdialout.RegisterGRPCMdtDialoutServer(srv.gSrv, srv)
