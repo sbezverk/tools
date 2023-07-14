@@ -1,7 +1,7 @@
 package sort
 
 type Comparable interface {
-	~int | ~string
+	~int | ~string | ~uint
 }
 
 func merge[T Comparable](s []T, low, mid, high int, temp []T) {
