@@ -1,10 +1,10 @@
 package sort
 
-type Comparable interface {
-	~int | ~string | ~uint
-}
+import (
+	"golang.org/x/exp/constraints"
+)
 
-func merge[T Comparable](s []T, low, mid, high int, temp []T) {
+func merge[T constraints.Ordered](s []T, low, mid, high int, temp []T) {
 	for k := low; k <= high; k++ {
 		temp[k] = s[k]
 	}
@@ -27,7 +27,7 @@ func merge[T Comparable](s []T, low, mid, high int, temp []T) {
 	}
 }
 
-func sort[T Comparable](s []T, low, high int, temp []T) {
+func sort[T constraints.Ordered](s []T, low, high int, temp []T) {
 	if high <= low {
 		return
 	}
@@ -40,7 +40,7 @@ func sort[T Comparable](s []T, low, high int, temp []T) {
 	merge(s, low, mid, high, temp)
 }
 
-func SortMergeComparableSlice[T Comparable](s []T) []T {
+func SortMergeComparableSlice[T constraints.Ordered](s []T) []T {
 	temp := make([]T, len(s))
 	sort(s, 0, len(s)-1, temp)
 	return s
