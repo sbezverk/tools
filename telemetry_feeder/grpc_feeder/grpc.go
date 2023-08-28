@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	MaxRcvMsgSize = 1024 * 1024
+	MaxRcvMsgSize = 1024 * 1024 * 4
 )
 
 type grpcSrv struct {
