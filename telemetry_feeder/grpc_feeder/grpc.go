@@ -1,6 +1,7 @@
 package grpc_feeder
 
 import (
+	"fmt"
 	"net"
 	"time"
 
@@ -80,11 +81,12 @@ func (srv *grpcSrv) worker(session mdtdialout.GRPCMdtDialout_MdtDialoutServer,
 		for {
 			info, err := session.Recv()
 			if err != nil {
-				eCh <- err
-				return
-			}
-			// Before sending the message, check if gRPC session has not been canceled
-			if status.Code(session.Context().Err()) == codes.Canceled {
+				// Before sending the message, check if gRPC session has not been canceled
+				if status.Code(session.Context().Err()) == codes.Canceled {
+					eCh <- fmt.Errorf("connection with peer %s has been canceled", producer.String())
+				} else {
+					eCh <- fmt.Errorf("connection with peer %s has been terminated with the error: %+v", producer.String(), err)
+				}
 				return
 			}
 			// Got telemetry info, sending it to the parent for further processing
