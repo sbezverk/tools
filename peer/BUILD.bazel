@@ -1,0 +1,16 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "peer",
+    srcs = [
+        "message.go",
+        "monitor.go",
+        "peer.go",
+    ],
+    importpath = "github.com/sbezverk/tools/peer",
+    deps = [
+        "@com_github_golang_glog//:go_default_library",
+    ],
+)

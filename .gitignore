@@ -1,0 +1,8 @@
+workspace.json
+*.log
+bin
+bazel-*
+*.lock
+testdata/
+.DS_Store
+.gocache

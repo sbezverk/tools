@@ -1,0 +1,24 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "Makefile",
+    "mdt_grpc_dialout.proto",
+])
+
+go_library(
+    name = "mdtdialout",
+    srcs = [
+        "mdt_grpc_dialout.pb.go",
+        "mdt_grpc_dialout_grpc.pb.go",
+    ],
+    importpath = "github.com/sbezverk/tools/telemetry_feeder/proto/mdtdialout",
+    deps = [
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//codes:go_default_library",
+        "@org_golang_google_grpc//status:go_default_library",
+        "@org_golang_google_protobuf//reflect/protoreflect:go_default_library",
+        "@org_golang_google_protobuf//runtime/protoimpl:go_default_library",
+    ],
+)

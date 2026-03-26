@@ -1,0 +1,21 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "sort",
+    srcs = ["slice_sort.go"],
+    importpath = "github.com/sbezverk/tools/sort",
+    deps = [
+        "@org_golang_x_exp//constraints:go_default_library",
+    ],
+)
+
+go_test(
+    name = "sort_test",
+    srcs = ["slice_sort_test.go"],
+    embed = [":sort"],
+    deps = [
+        "@com_github_go_test_deep//:go_default_library",
+    ],
+)

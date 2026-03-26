@@ -6,6 +6,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/golang/glog"
 )
@@ -37,20 +38,21 @@ type Monitor interface {
 var _ Monitor = &monitor{}
 
 type monitor struct {
-	stop            chan struct{}
-	monitorCh       chan *MonitorMessage
-	monitorChActive bool
+	stop      chan struct{}
+	monitorCh chan *MonitorMessage
+	once      sync.Once
 }
 
 func (m *monitor) Stop() {
-	glog.Infof("Closing monitor...")
-	m.stop <- struct{}{}
-	<-m.stop
-	glog.Infof("monitor closed ..")
+	m.once.Do(func() {
+		glog.Infof("Closing monitor...")
+		m.stop <- struct{}{}
+		<-m.stop
+		glog.Infof("monitor closed ..")
+	})
 }
 
 func (m *monitor) GetMonitorCh() chan *MonitorMessage {
-	m.monitorChActive = true
 	return m.monitorCh
 }
 
@@ -74,9 +76,14 @@ func (m *monitor) manager(la string, port int, rPeers ...string) {
 				p.Stop()
 			}
 			close(m.stop)
+			close(m.monitorCh)
 			return
 		case msg := <-peersStateCh:
 			glog.Infof("Peer: %s state changed to %s", msg.RemotePeer, msg.PeerState)
+			m.monitorCh <- &MonitorMessage{
+				RemotePeer: msg.RemotePeer,
+				PeerState:  msg.PeerState,
+			}
 		}
 	}
 }
@@ -109,9 +116,8 @@ func SetupMonitorForRemotePeer(la string, port int, rPeers ...string) (Monitor, 
 		}
 	}
 	m := &monitor{
-		stop:            make(chan struct{}),
-		monitorCh:       make(chan *MonitorMessage),
-		monitorChActive: false,
+		stop:      make(chan struct{}),
+		monitorCh: make(chan *MonitorMessage, len(rPeers)+1),
 	}
 	go m.manager(la, port, rPeers...)
 

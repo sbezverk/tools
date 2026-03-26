@@ -44,9 +44,11 @@ func (o *offFeeder) retrieve() {
 			if _, err := o.file.Read(b); err != nil {
 				if err == io.EOF {
 					glog.Info("processing offline telemetry file completed")
+					close(o.feed)
 					return
 				}
 				glog.Errorf("failed to read the record with error: %+v", err)
+				close(o.feed)
 				return
 			}
 			f := &feeder.Feed{}
@@ -60,6 +62,7 @@ func (o *offFeeder) retrieve() {
 }
 
 func (o *offFeeder) Stop() {
+	close(o.stop)
 	o.file.Close()
 }
 
@@ -73,7 +76,9 @@ func New(fn string) (feeder.Feeder, error) {
 		stop: make(chan struct{}),
 		file: f,
 	}
-	o.retrieve()
+	go func() {
+		o.retrieve()
+	}()
 
 	return o, nil
 }

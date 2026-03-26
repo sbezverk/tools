@@ -1,0 +1,27 @@
+load("@gazelle//:def.bzl", "gazelle")
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+gazelle(
+    name = "gazelle",
+    prefix = "github.com/sbezverk/tools",
+)
+
+go_library(
+    name = "tools",
+    srcs = [
+        "signal_handler.go",
+        "tools.go",
+    ],
+    importpath = "github.com/sbezverk/tools",
+)
+
+go_test(
+    name = "tools_test",
+    srcs = ["tools_test.go"],
+    embed = [":tools"],
+    deps = [
+        "@com_github_go_test_deep//:go_default_library",
+    ],
+)

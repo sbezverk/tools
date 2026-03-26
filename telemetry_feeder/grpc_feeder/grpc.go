@@ -62,10 +62,6 @@ func New(addr string) (feeder.Feeder, error) {
 func (srv *grpcSrv) MdtDialout(session mdtdialout.GRPCMdtDialout_MdtDialoutServer) error {
 	infoCh := make(chan *mdtdialout.MdtDialoutArgs)
 	errCh := make(chan error)
-	defer func() {
-		close(infoCh)
-		close(errCh)
-	}()
 
 	return srv.worker(session, infoCh, errCh)
 }
@@ -76,6 +72,8 @@ func (srv *grpcSrv) worker(session mdtdialout.GRPCMdtDialout_MdtDialoutServer,
 	var producer net.Addr
 	if p, ok := peer.FromContext(session.Context()); ok {
 		producer = p.Addr
+	} else {
+		producer = &net.IPAddr{IP: net.ParseIP("0.0.0.0")}
 	}
 	go func(iCh chan *mdtdialout.MdtDialoutArgs, eCh chan error) {
 		for {
@@ -83,14 +81,26 @@ func (srv *grpcSrv) worker(session mdtdialout.GRPCMdtDialout_MdtDialoutServer,
 			if err != nil {
 				// Before sending the message, check if gRPC session has not been canceled
 				if status.Code(session.Context().Err()) == codes.Canceled {
-					eCh <- fmt.Errorf("connection with peer %s has been canceled", producer.String())
+					select {
+					case eCh <- fmt.Errorf("connection with peer %s has been canceled", producer.String()):
+					case <-srv.stopCh:
+						return
+					}
 				} else {
-					eCh <- fmt.Errorf("connection with peer %s has been terminated with the error: %+v", producer.String(), err)
+					select {
+					case eCh <- fmt.Errorf("connection with peer %s has been terminated with the error: %w", producer.String(), err):
+					case <-srv.stopCh:
+						return
+					}
 				}
 				return
 			}
 			// Got telemetry info, sending it to the parent for further processing
-			iCh <- info
+			select {
+			case iCh <- info:
+			case <-srv.stopCh:
+				return
+			}
 		}
 	}(infoCh, errCh)
 	for {
