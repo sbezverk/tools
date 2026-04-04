@@ -1,0 +1,77 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "Makefile",
+])
+
+go_library(
+    name = "route",
+    srcs = ["routes/route/schema.pb.go"],
+    importpath = "github.com/sbezverk/tools/telemetry_feeder/proto/ios-xr-rib/routes/route",
+    deps = [
+        "@org_golang_google_protobuf//reflect/protoreflect:go_default_library",
+        "@org_golang_google_protobuf//runtime/protoimpl:go_default_library",
+    ],
+)
+
+go_library(
+    name = "backup_route",
+    srcs = ["backup_routes/backup_route/schema.pb.go"],
+    importpath = "github.com/sbezverk/tools/telemetry_feeder/proto/ios-xr-rib/backup_routes/backup_route",
+    deps = [
+        "@org_golang_google_protobuf//reflect/protoreflect:go_default_library",
+        "@org_golang_google_protobuf//runtime/protoimpl:go_default_library",
+    ],
+)
+
+go_library(
+    name = "deleted_route",
+    srcs = ["deleted_routes/deleted_route/schema.pb.go"],
+    importpath = "github.com/sbezverk/tools/telemetry_feeder/proto/ios-xr-rib/deleted_routes/deleted_route",
+    deps = [
+        "@org_golang_google_protobuf//reflect/protoreflect:go_default_library",
+        "@org_golang_google_protobuf//runtime/protoimpl:go_default_library",
+    ],
+)
+
+go_library(
+    name = "ribtph_entry",
+    srcs = ["ribtph_entries/ribtph_entry/schema.pb.go"],
+    importpath = "github.com/sbezverk/tools/telemetry_feeder/proto/ios-xr-rib/ribtph_entries/ribtph_entry",
+    deps = [
+        "@org_golang_google_protobuf//reflect/protoreflect:go_default_library",
+        "@org_golang_google_protobuf//runtime/protoimpl:go_default_library",
+    ],
+)
+
+go_library(
+    name = "nexthop_damping_history",
+    srcs = ["nexthop_damping_histories/nexthop_damping_history/schema.pb.go"],
+    importpath = "github.com/sbezverk/tools/telemetry_feeder/proto/ios-xr-rib/nexthop_damping_histories/nexthop_damping_history",
+    deps = [
+        "@org_golang_google_protobuf//reflect/protoreflect:go_default_library",
+        "@org_golang_google_protobuf//runtime/protoimpl:go_default_library",
+    ],
+)
+
+go_library(
+    name = "opaque",
+    srcs = ["opaques/opaque/schema.pb.go"],
+    importpath = "github.com/sbezverk/tools/telemetry_feeder/proto/ios-xr-rib/opaques/opaque",
+    deps = [
+        "@org_golang_google_protobuf//reflect/protoreflect:go_default_library",
+        "@org_golang_google_protobuf//runtime/protoimpl:go_default_library",
+    ],
+)
+
+go_library(
+    name = "q_route",
+    srcs = ["q_routes/q_route/schema.pb.go"],
+    importpath = "github.com/sbezverk/tools/telemetry_feeder/proto/ios-xr-rib/q_routes/q_route",
+    deps = [
+        "@org_golang_google_protobuf//reflect/protoreflect:go_default_library",
+        "@org_golang_google_protobuf//runtime/protoimpl:go_default_library",
+    ],
+)

@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package IOSXRExtensibleManagabilityService;
+
+option go_package = "github.com/sbezverk/tools/xr_getproto/proto;emsgetproto";
+
+service gRPCConfigOper {
+  rpc GetProtoFile(GetProtoFileArgs) returns (stream GetProtoFileReply) {}
+}
+
+message GetProtoFileArgs {
+  int64 reqId = 1;
+  string yangPath = 2;
+}
+
+message GetProtoFileReply {
+  int64 reqId = 1;
+  string protoContent = 2;
+  string errors = 3;
+}

@@ -1,0 +1,798 @@
+syntax = "proto3";
+
+//Path: Cisco-IOS-XR-ip-rib-oper:rib/vrfs/vrf/afs/af/safs/saf/ip-rib-route-table-names/ip-rib-route-table-name/protocol/rpl/as/protocol-routes/protocol-route
+
+package cisco_ios_xr_ip_rib_oper.rib.vrfs.vrf.afs.af.safs.saf.ip_rib_route_table_names.ip_rib_route_table_name.protocol.rpl.as.protocol_routes.protocol_route;
+
+option go_package = "github.com/sbezverk/tools/telemetry_feeder/proto/xr-rib/split/cisco_ios_xr_ip_rib_oper/rib/vrfs/vrf/afs/af/safs/saf/ip_rib_route_table_names/ip_rib_route_table_name/protocol/rpl/as/protocol_routes/protocol_route;protocol_route";
+
+// Information of a rib route head and rib proto route
+message rib_edm_route_KEYS {
+    string vrf_name = 1;
+    string af_name = 2;
+    string saf_name = 3;
+    string route_table_name = 4;
+    string as = 5;
+    string network = 6;
+}
+
+message rib_edm_route {
+    // Type of the route - prefix or label
+    string type = 50;
+    // Route prefix
+    rib_edm_ip_pfx_t prefix = 51;
+    // Route version, incremented by one on each active route change
+    uint32 route_version = 52;
+    // Protocol advertising the route
+    uint32 protocol_id = 53;
+    //  Name of Protocol
+    string protocol_name = 54;
+    // Instance name
+    string instance = 55;
+    // Client adding the route to RIB
+    uint32 client_id = 56;
+    // Mirrored
+    bool mirrored = 57;
+    // Type of route installed in RIB
+    uint32 route_type = 58;
+    // Route priority
+    uint32 priority = 59;
+    // SVD Type of route
+    uint32 svd_type = 60;
+    // Type of route associated with L2 Service
+    uint32 l2_route_type = 61;
+    // Sub protocol ID
+    uint32 sub_protocol_id = 62;
+    // Route flags
+    uint32 flags = 63;
+    // Extended Route flags
+    uint64 extended_flags = 64;
+    // Opaque proto specific info
+    uint32 tag = 65;
+    // Distance of the route
+    uint32 distance = 66;
+    // Diversion distance of the route
+    uint32 diversion_distance = 67;
+    // Route metric
+    uint32 metric = 68;
+    // BGP Attribute ID
+    uint32 attribute_identity = 69;
+    // BGP Traffic Index
+    uint32 traffic_index = 70;
+    // IP precedence for this route
+    uint32 route_precedence = 71;
+    // Route qos group
+    uint32 qos_group = 72;
+    // Flow tag for this route
+    uint32 flow_tag = 73;
+    // Forward Class
+    uint32 fwd_class = 74;
+    // Number of pic paths in this route
+    uint32 pic_count = 75;
+    // Is the route active or backup
+    bool active = 76;
+    // Is the route unviable
+    bool unviable = 77;
+    // Is the route in potential install (the route update is held back to ensure lossless updates requirements are met)
+    bool potential = 78;
+    // Route has potential updates (updates that are held back to ensure lossless updates requirements are met)
+    bool has_potential = 79;
+    // Route has a diversion path
+    bool diversion = 80;
+    // Diversion route protocol name
+    string diversion_proto_name = 81;
+    // Age of route (seconds)
+    uint32 route_age = 82;
+    // Local label of the route
+    uint32 route_label = 83;
+    // Label producer protocol ID
+    uint32 label_proto_id = 84;
+    // Label producer protocol name
+    string label_proto_name = 85;
+    // Route Version
+    uint32 version = 86;
+    // Table Version
+    uint64 tbl_version = 87;
+    // Route modification time(nanoseconds)
+    uint64 route_modify_time = 88;
+    // Fib per-prefix encap id
+    uint64 prefix_feid = 89;
+    // List of Algorithm Labels associated with this Prefix
+    repeated rib_edm_algo_label_set algorithm_label = 90;
+    // Should the route be redistributed to FIB
+    bool no_fib_redist = 91;
+    // Flexible Algorithm associated with route
+    uint32 flexible_algorithm = 92;
+    // Table id
+    uint32 table_id = 93;
+    // Hardware ACK information
+    repeated rib_edm_route_hw_ack hw_ack = 94;
+    // SRv6 related information
+    rib_edm_route_srv6_info s_rv6_info = 95;
+    // Route AFT info
+    rib_edm_route_aft_info aft = 96;
+    // Path(s) of the route
+    repeated rib_edm_path route_path = 97;
+}
+
+// SRv6 SID Format Info
+message mgmt_srv6_sid_fmt {
+    // Format type
+    string type = 1;
+    // Format description
+    string description = 2;
+}
+
+// SRv6 Endpoint Behavior Info
+message mgmt_srv6_endpoint_behavior {
+    // Behavior type
+    string type = 1;
+    // Behavior description
+    string description = 2;
+    // IANA assigned value
+    uint32 iana_type = 3;
+}
+
+// SRv6 Headend Behavior Info
+message mgmt_srv6_headend_behavior {
+    // Behavior type
+    string type = 1;
+    // Behavior description
+    string description = 2;
+}
+
+// SRv6 SID
+message mgmt_srv6_sid {
+    // SID value
+    string sid = 1;
+}
+
+// InternalID context NHG key name
+message mgmt_rib_iid_ctx_nhg_key_name_t {
+    // Name
+    string name = 1;
+}
+
+message mgmt_rib_iid_ctx_nhg_key {
+    string internal_id_context_nhg_key_type = 1;
+    // InternalID context for NHG name
+    mgmt_rib_iid_ctx_nhg_key_name_t nhg_name = 2;
+    // InternalID context for FRR-NHG name
+    mgmt_rib_iid_ctx_nhg_key_name_t frrnhg_name = 3;
+}
+
+message rib_in6_addr_t {
+    string value = 1;
+}
+
+message rib_edm_ip_addr_t {
+    string afi = 1;
+    // No address family
+    uint32 none = 2;
+    // IPv4 address type
+    string ipv4 = 3;
+    // IPv6 address type
+    rib_in6_addr_t ipv6 = 4;
+}
+
+// IPv4/IPv6 IP address and Prefix length
+message rib_edm_ip_pfx_t {
+    // IPv4/IPv6 address
+    rib_edm_ip_addr_t ip_address = 1;
+    // Prefix length
+    uint32 prefix_length = 2;
+}
+
+// Information of L2 Info attribute in path
+message rib_edm_path_l2_info {
+    // L2 Cross Connect ID for this path
+    uint32 xcid = 1;
+    // L2 AC Interface
+    string ac_interface = 2;
+    // L2 Split Horizon Group ID
+    uint32 split_horizon_group_id = 3;
+    // L2 Bridge ID
+    uint32 bridge_id = 4;
+}
+
+// Information of Via aft ID attribute in path
+message rib_edm_path_via_aft_id {
+    // AFT ID for this path
+    uint64 aft_id = 1;
+    // VRF ID for this path
+    uint32 vrf_id = 2;
+    // Type of AFT ID
+    string type = 3;
+    // VRF name
+    string vrf_name = 4;
+}
+
+// Information of Path Grouping
+message rib_edm_path_grouping_info {
+    // Grouping ID for this path
+    uint32 grouping_id = 1;
+}
+
+// MAC address type
+message MacAddressType {
+    string value = 1;
+}
+
+// Information of IP tunnel Info attribute in path
+message rib_edm_path_ip_tunnel_info {
+    // Tunnel is auto created
+    bool auto_created = 1;
+    // Tunnel Type
+    string tunnel_type = 2;
+    // VXLAN Network Identifier Flags
+    uint32 flags = 3;
+    // Egress VXLAN Network Identifier
+    uint32 e_vni = 4;
+    // Tunnel ID
+    uint32 tunnel_id = 5;
+    // VXLAN Network Identifier
+    uint32 vni = 6;
+    // Remote Tunnel End Point ID
+    uint64 rtep_id = 7;
+    // Source MAC Address
+    MacAddressType src_mac = 8;
+    // Destination MAC Address
+    MacAddressType dst_mac = 9;
+    // Source IP Address
+    rib_edm_ip_addr_t src_ip_addr = 10;
+    // Destination IP Address
+    rib_edm_ip_addr_t dst_ip_addr = 11;
+    // DSCP
+    uint32 dscp = 12;
+    // TTL
+    uint32 ttl = 13;
+}
+
+// Information of Segment List Identifier
+message rib_edm_path_sl_id_info {
+    // Segment List ID type
+    string type = 1;
+    // Segment List ID
+    uint32 sl_id = 2;
+}
+
+// Information of path Class of Service
+message rib_edm_path_cos {
+    // Class of Service type
+    string type = 1;
+    // Class of Service value
+    uint32 value = 2;
+    // Indication if Class of Service is default
+    bool is_default = 3;
+}
+
+// Information of Primary/Secondary Path attribute
+message rib_edm_prim_sec {
+    // Path set identifier
+    uint32 path_set_id = 1;
+    // Path set activation priority
+    string set_activation_prio = 2;
+    // Path down indication
+    bool path_down = 3;
+}
+
+// Information of via NHG
+message rib_edm_path_via_nhg {
+    // NHG key
+    mgmt_rib_iid_ctx_nhg_key key = 1;
+    // IID value
+    uint32 iid = 2;
+}
+
+// HW_ACK attributes of an object
+message rib_edm_obj_hw_ack {
+    // Transaction ID for the operation
+    uint64 transaction_id = 1;
+    // Operation ID set by route-producers for the object
+    uint64 operation_id = 2;
+    // The object operation result
+    string operation_result = 3;
+    // HWAA response for the object
+    string ack_response = 4;
+    // Event history
+    repeated string events = 5;
+    // Timestamp of the last HWAA request sent in nanoseconds
+    uint64 hwaa_req_ts = 6;
+    // Latency of the last responded HWAA request latency in nanoseconds
+    uint64 hwaa_req_latency = 7;
+    // The object operation type
+    string operation_type = 8;
+    // ACK state requested
+    string ack_state_requested = 9;
+    // Unsolicited ACK state
+    string unsolicited_state = 10;
+    // In case of NACK, FIB reason
+    string fib_error_reason = 11;
+    // In case of NACK, Node ID
+    uint32 nack_node_id = 12;
+    // Is object in NACK state
+    bool is_nack = 13;
+}
+
+// Route Hardware ACK information
+message rib_edm_route_hw_ack {
+    // Hardware ACK object information
+    rib_edm_obj_hw_ack hwack_obj = 1;
+}
+
+// Information related to Via-SRv6-SID
+message rib_edm_via_srv6_sid {
+    // Via-SRv6-SID value
+    string sid = 1;
+    // FIB Resolution length
+    uint32 resolution_length = 2;
+}
+
+// RIB path's SRv6 related private information
+message rib_edm_path_srv6_private_info {
+}
+
+// RIB path's SRv6 related information
+message rib_edm_path_srv6_info {
+    // SRv6 Carrier Format
+    mgmt_srv6_sid_fmt s_rv6_carrier_format = 1;
+    // List of SRv6 Carriers with one or more SIDs
+    repeated mgmt_srv6_sid s_rv6_carrier = 2;
+    // SRv6 headend behavior/type info
+    mgmt_srv6_headend_behavior s_rv6_headend_behavior = 3;
+}
+
+// RIB path private information
+message rib_edm_path_private_info {
+}
+
+message ospf_area_id_td {
+    string area_id_type = 1;
+    // IP address format
+    string id_ip_addr = 2;
+    // Integer format
+    uint32 id_int = 3;
+}
+
+message path_attr_td {
+    string path_attr_type = 1;
+    // Subscriber Parent Interface for this path
+    string subscriber_parent_interface = 2;
+    // L2 Cross Connect ID for this path
+    uint32 xc_id = 3;
+    // SPAN Diagnostics Interface for this path
+    string span_diag_interface = 4;
+    // VXLAN Network Identifier for this path
+    uint32 vxlan_network_id = 5;
+    // Label associated with this path
+    uint32 route_label = 6;
+}
+
+// Information of a rib path
+message rib_edm_path {
+    // Nexthop
+    rib_edm_ip_addr_t address = 1;
+    // Infosource
+    rib_edm_ip_addr_t information_source = 2;
+    // Interface handle for the path's nexthop
+    string interface_name = 3;
+    // Metrics
+    uint32 metric = 4;
+    // Load Metrics
+    uint32 load_metric = 5;
+    // Minimum netmask length of recursive resolving route
+    uint32 minimum_recurse_length = 6;
+    // Looping path
+    bool looped = 7;
+    // The table to which the next hop belongs
+    uint32 next_hop_table_id = 8;
+    // VRF Name of the nh table
+    string next_hop_vrf_name = 9;
+    // NH table name
+    string next_hop_table_name = 10;
+    // NH Address Family
+    string next_hop_afi = 11;
+    // NH Sub Address Family
+    string next_hop_safi = 12;
+    // Tunnel ID associated with this path
+    uint32 tunnel_id = 13;
+    // Path id of this path
+    uint32 path_id = 14;
+    // Path id of this path's backup
+    uint32 backup_path_id = 15;
+    // For backup paths, the number of active paths protected by the backup path
+    uint32 ref_cnt_of_backup = 16;
+    // NHID associated with this path
+    uint32 next_hop_id = 17;
+    // NHID references
+    uint32 next_hop_id_refcount = 18;
+    // Path NHID used for StatsID
+    uint32 stats_next_hop_id = 19;
+    // Stats NHID references
+    uint32 stats_next_hop_id_refcount = 20;
+    // OSPF area associated with the path
+    ospf_area_id_td ospf_area_id = 21;
+    // Remote backup node address
+    repeated rib_edm_ip_addr_t remote_backup_addr = 22;
+    // Outgoing label stack for this path
+    repeated uint32 label_stack = 23;
+    // binding Label for this path
+    uint32 binding_label = 24;
+    // Fib nhid encap id
+    uint64 nexthop_id_feid = 25;
+    // Fib mpls encap id
+    uint64 mpls_feid = 26;
+    // Path attribute
+    path_attr_td path_attribute = 27;
+    // Path Viability
+    bool viable = 28;
+    // Internal ID attribute
+    rib_edm_ip_addr_t iid = 29;
+    // L2 Info for this path
+    rib_edm_path_l2_info l2_info = 30;
+    // Grouping Info for this path
+    rib_edm_path_grouping_info path_grouping_info = 31;
+    // SRv6 related information
+    rib_edm_path_srv6_info s_rv6_info = 32;
+    // Via-SRv6-SID value
+    rib_edm_via_srv6_sid via_s_rv6_sid = 33;
+    // IP Tunnel Info for this path
+    rib_edm_path_ip_tunnel_info ip_tunnel_info = 34;
+    // Via AFT ID info for this path
+    rib_edm_path_via_aft_id via_aft_id = 35;
+    // Segment List ID Info
+    rib_edm_path_sl_id_info segment_list_id_info = 36;
+    // Path Class of Service information
+    rib_edm_path_cos path_co_s = 37;
+    // Primary/Secondary path information
+    rib_edm_prim_sec prim_sec = 38;
+    // Via NHG info for this path
+    rib_edm_path_via_nhg via_nhg = 39;
+}
+
+// Algorithm ID to Local Label information
+message rib_edm_algo_label_set {
+    // Algorithm Identifier
+    uint32 algorithm_id = 1;
+    // Local label
+    uint32 label = 2;
+    // Route Metric associated with Algorithm Identifier
+    uint32 metric = 3;
+}
+
+// Information of local label for route head
+message rib_edm_local_label {
+    // Protocol Name
+    string protocol_name = 1;
+    // Client ID
+    uint32 client_id = 2;
+    // Redist only
+    uint32 redist_only = 3;
+    // Local label
+    uint32 label = 4;
+    // Distance
+    uint32 distance = 5;
+    // Metric
+    uint32 metric = 6;
+    // List of Algorithm Labels associated with this Prefix
+    repeated rib_edm_algo_label_set algorithm_label = 7;
+}
+
+// Merge data
+message rib_edm_merge_data {
+    // Local label
+    uint32 label = 1;
+    // Withhold Advertisements
+    bool withhold_advertisement = 2;
+}
+
+// Merge object produced by a single protocol
+message rib_edm_merge_object {
+    // Protocol Name
+    string protocol_name = 1;
+    // Merge Data
+    rib_edm_merge_data merge_data = 2;
+    // Client ID
+    uint32 client_id = 3;
+    // Stale
+    uint32 stale = 4;
+    // Mirrored
+    uint32 mirrored = 5;
+    // Distance
+    uint32 distance = 6;
+}
+
+// Information of SRv6 Local SID associated with route head
+message rib_edm_srv6_rw_opcode {
+    // Owning Protocol Name
+    string protocol_name = 1;
+    // Owning Client ID
+    uint32 client_id = 2;
+    // Owning Protocol ID
+    uint32 protocol_id = 3;
+    // Locator Identifier
+    uint32 locator_id = 4;
+    // Opcode Identifier
+    uint32 sid_opcode = 5;
+    // Stale
+    bool stale = 6;
+    // Mirrored
+    bool mirrored = 7;
+    // Delayed Delete of Route
+    bool delayed_delete = 8;
+}
+
+// Information of Local IID associated with route head
+message rib_edm_iid_rw {
+    // Owning Protocol Name
+    string protocol_name = 1;
+    // Owning Client ID
+    uint32 client_id = 2;
+    // Owning Protocol ID
+    uint32 protocol_id = 3;
+    // Internal ID as value
+    uint32 iid_value = 4;
+    // Number of references to this object
+    uint32 reference_count = 5;
+    // Stale
+    bool stale = 6;
+    // Mirrored
+    bool mirrored = 7;
+}
+
+// RIB route's SRv6 related information
+message rib_edm_route_srv6_info {
+    // Route corresponds to an SRv6 remote locator
+    bool is_s_rv6_locator = 1;
+    // SRv6 Algo corresponding to SRv6 remote locator
+    uint32 s_rv6_locator_algo = 2;
+    // SRv6 Endpoint behavior/type
+    mgmt_srv6_endpoint_behavior s_rv6_endpoint_behavior = 3;
+    // SRv6 Format
+    mgmt_srv6_sid_fmt s_rv6_format = 4;
+}
+
+// Information about a producer of merge data
+message rib_edm_merge_prod_info {
+    // Producer Protocol ID
+    uint32 protocol_id = 1;
+    // Producer protocol name
+    string protocol_name = 2;
+    // Distance
+    uint32 distance = 3;
+}
+
+// The active merge data stored for a route head
+message rib_edm_route_act_merge_info {
+    // Merge data
+    rib_edm_merge_data merge_data = 1;
+    // Label producer info
+    rib_edm_merge_prod_info label_prod_info = 2;
+    // Withhold Advertisements producer info
+    rib_edm_merge_prod_info wthld_adverts_prod_info = 3;
+}
+
+// RIB route's AFT info
+message rib_edm_route_aft_info {
+    // AFT ID for this route
+    uint64 aft_id = 1;
+    // VRF ID for this route
+    uint32 vrf_id = 2;
+    // Transaction ID
+    uint64 transaction_id = 3;
+    // VRF Name
+    string vrf_name = 4;
+}
+
+// RIB drop route info
+message rib_edm_drop_route_info {
+    // Starting timestamp for delay-update-to-drop
+    uint64 start_time = 1;
+    // Time since started for delay-update-to-drop (in seconds)
+    uint32 time_since_started = 2;
+    // Timestamp for updating drop route to FIB
+    uint64 update_time = 3;
+}
+
+//                                 Apache License
+//                           Version 2.0, January 2004
+//                        http://www.apache.org/licenses/
+//
+//   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+//
+//   1. Definitions.
+//
+//      "License" shall mean the terms and conditions for use, reproduction,
+//      and distribution as defined by Sections 1 through 9 of this document.
+//
+//      "Licensor" shall mean the copyright owner or entity authorized by
+//      the copyright owner that is granting the License.
+//
+//      "Legal Entity" shall mean the union of the acting entity and all
+//      other entities that control, are controlled by, or are under common
+//      control with that entity. For the purposes of this definition,
+//      "control" means (i) the power, direct or indirect, to cause the
+//      direction or management of such entity, whether by contract or
+//      otherwise, or (ii) ownership of fifty percent (50%) or more of the
+//      outstanding shares, or (iii) beneficial ownership of such entity.
+//
+//      "You" (or "Your") shall mean an individual or Legal Entity
+//      exercising permissions granted by this License.
+//
+//      "Source" form shall mean the preferred form for making modifications,
+//      including but not limited to software source code, documentation
+//      source, and configuration files.
+//
+//      "Object" form shall mean any form resulting from mechanical
+//      transformation or translation of a Source form, including but
+//      not limited to compiled object code, generated documentation,
+//      and conversions to other media types.
+//
+//      "Work" shall mean the work of authorship, whether in Source or
+//      Object form, made available under the License, as indicated by a
+//      copyright notice that is included in or attached to the work
+//      (an example is provided in the Appendix below).
+//
+//      "Derivative Works" shall mean any work, whether in Source or Object
+//      form, that is based on (or derived from) the Work and for which the
+//      editorial revisions, annotations, elaborations, or other modifications
+//      represent, as a whole, an original work of authorship. For the purposes
+//      of this License, Derivative Works shall not include works that remain
+//      separable from, or merely link (or bind by name) to the interfaces of,
+//      the Work and Derivative Works thereof.
+//
+//      "Contribution" shall mean any work of authorship, including
+//      the original version of the Work and any modifications or additions
+//      to that Work or Derivative Works thereof, that is intentionally
+//      submitted to Licensor for inclusion in the Work by the copyright owner
+//      or by an individual or Legal Entity authorized to submit on behalf of
+//      the copyright owner. For the purposes of this definition, "submitted"
+//      means any form of electronic, verbal, or written communication sent
+//      to the Licensor or its representatives, including but not limited to
+//      communication on electronic mailing lists, source code control systems,
+//      and issue tracking systems that are managed by, or on behalf of, the
+//      Licensor for the purpose of discussing and improving the Work, but
+//      excluding communication that is conspicuously marked or otherwise
+//      designated in writing by the copyright owner as "Not a Contribution."
+//
+//      "Contributor" shall mean Licensor and any individual or Legal Entity
+//      on behalf of whom a Contribution has been received by Licensor and
+//      subsequently incorporated within the Work.
+//
+//   2. Grant of Copyright License. Subject to the terms and conditions of
+//      this License, each Contributor hereby grants to You a perpetual,
+//      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+//      copyright license to reproduce, prepare Derivative Works of,
+//      publicly display, publicly perform, sublicense, and distribute the
+//      Work and such Derivative Works in Source or Object form.
+//
+//   3. Grant of Patent License. Subject to the terms and conditions of
+//      this License, each Contributor hereby grants to You a perpetual,
+//      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+//      (except as stated in this section) patent license to make, have made,
+//      use, offer to sell, sell, import, and otherwise transfer the Work,
+//      where such license applies only to those patent claims licensable
+//      by such Contributor that are necessarily infringed by their
+//      Contribution(s) alone or by combination of their Contribution(s)
+//      with the Work to which such Contribution(s) was submitted. If You
+//      institute patent litigation against any entity (including a
+//      cross-claim or counterclaim in a lawsuit) alleging that the Work
+//      or a Contribution incorporated within the Work constitutes direct
+//      or contributory patent infringement, then any patent licenses
+//      granted to You under this License for that Work shall terminate
+//      as of the date such litigation is filed.
+//
+//   4. Redistribution. You may reproduce and distribute copies of the
+//      Work or Derivative Works thereof in any medium, with or without
+//      modifications, and in Source or Object form, provided that You
+//      meet the following conditions:
+//
+//      (a) You must give any other recipients of the Work or
+//          Derivative Works a copy of this License; and
+//
+//      (b) You must cause any modified files to carry prominent notices
+//          stating that You changed the files; and
+//
+//      (c) You must retain, in the Source form of any Derivative Works
+//          that You distribute, all copyright, patent, trademark, and
+//          attribution notices from the Source form of the Work,
+//          excluding those notices that do not pertain to any part of
+//          the Derivative Works; and
+//
+//      (d) If the Work includes a "NOTICE" text file as part of its
+//          distribution, then any Derivative Works that You distribute must
+//          include a readable copy of the attribution notices contained
+//          within such NOTICE file, excluding those notices that do not
+//          pertain to any part of the Derivative Works, in at least one
+//          of the following places: within a NOTICE text file distributed
+//          as part of the Derivative Works; within the Source form or
+//          documentation, if provided along with the Derivative Works; or,
+//          within a display generated by the Derivative Works, if and
+//          wherever such third-party notices normally appear. The contents
+//          of the NOTICE file are for informational purposes only and
+//          do not modify the License. You may add Your own attribution
+//          notices within Derivative Works that You distribute, alongside
+//          or as an addendum to the NOTICE text from the Work, provided
+//          that such additional attribution notices cannot be construed
+//          as modifying the License.
+//
+//      You may add Your own copyright statement to Your modifications and
+//      may provide additional or different license terms and conditions
+//      for use, reproduction, or distribution of Your modifications, or
+//      for any such Derivative Works as a whole, provided Your use,
+//      reproduction, and distribution of the Work otherwise complies with
+//      the conditions stated in this License.
+//
+//   5. Submission of Contributions. Unless You explicitly state otherwise,
+//      any Contribution intentionally submitted for inclusion in the Work
+//      by You to the Licensor shall be under the terms and conditions of
+//      this License, without any additional terms or conditions.
+//      Notwithstanding the above, nothing herein shall supersede or modify
+//      the terms of any separate license agreement you may have executed
+//      with Licensor regarding such Contributions.
+//
+//   6. Trademarks. This License does not grant permission to use the trade
+//      names, trademarks, service marks, or product names of the Licensor,
+//      except as required for reasonable and customary use in describing the
+//      origin of the Work and reproducing the content of the NOTICE file.
+//
+//   7. Disclaimer of Warranty. Unless required by applicable law or
+//      agreed to in writing, Licensor provides the Work (and each
+//      Contributor provides its Contributions) on an "AS IS" BASIS,
+//      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+//      implied, including, without limitation, any warranties or conditions
+//      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+//      PARTICULAR PURPOSE. You are solely responsible for determining the
+//      appropriateness of using or redistributing the Work and assume any
+//      risks associated with Your exercise of permissions under this License.
+//
+//   8. Limitation of Liability. In no event and under no legal theory,
+//      whether in tort (including negligence), contract, or otherwise,
+//      unless required by applicable law (such as deliberate and grossly
+//      negligent acts) or agreed to in writing, shall any Contributor be
+//      liable to You for damages, including any direct, indirect, special,
+//      incidental, or consequential damages of any character arising as a
+//      result of this License or out of the use or inability to use the
+//      Work (including but not limited to damages for loss of goodwill,
+//      work stoppage, computer failure or malfunction, or any and all
+//      other commercial damages or losses), even if such Contributor
+//      has been advised of the possibility of such damages.
+//
+//   9. Accepting Warranty or Additional Liability. While redistributing
+//      the Work or Derivative Works thereof, You may choose to offer,
+//      and charge a fee for, acceptance of support, warranty, indemnity,
+//      or other liability obligations and/or rights consistent with this
+//      License. However, in accepting such obligations, You may act only
+//      on Your own behalf and on Your sole responsibility, not on behalf
+//      of any other Contributor, and only if You agree to indemnify,
+//      defend, and hold each Contributor harmless for any liability
+//      incurred by, or claims asserted against, such Contributor by reason
+//      of your accepting any such warranty or additional liability.
+//
+//   END OF TERMS AND CONDITIONS
+//
+//   APPENDIX: How to apply the Apache License to your work.
+//
+//      To apply the Apache License to your work, attach the following
+//      boilerplate notice, with the fields enclosed by brackets "{}"
+//      replaced with your own identifying information. (Don't include
+//      the brackets!)  The text should be enclosed in the appropriate
+//      comment syntax for the file format. We also recommend that a
+//      file or class name and description of purpose be included on the
+//      same "printed page" as the copyright notice for easier
+//      identification within third-party archives.
+//
+//   Copyright (c) 2017 Cisco
+//
+//   Licensed under the Apache License, Version 2.0 (the "License");
+//   you may not use this file except in compliance with the License.
+//   You may obtain a copy of the License at
+//
+//       http://www.apache.org/licenses/LICENSE-2.0
+//
+//   Unless required by applicable law or agreed to in writing, software
+//   distributed under the License is distributed on an "AS IS" BASIS,
+//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//   See the License for the specific language governing permissions and
+//   limitations under the License.
+

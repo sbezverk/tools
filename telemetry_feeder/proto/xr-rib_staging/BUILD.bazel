@@ -1,0 +1,18 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "Makefile",
+    "xr-rib.proto",
+])
+
+go_library(
+    name = "xr_rib",
+    srcs = ["xr-rib.pb.go"],
+    importpath = "github.com/sbezverk/tools/telemetry_feeder/proto/xr_rib",
+    deps = [
+        "@org_golang_google_protobuf//reflect/protoreflect:go_default_library",
+        "@org_golang_google_protobuf//runtime/protoimpl:go_default_library",
+    ],
+)
