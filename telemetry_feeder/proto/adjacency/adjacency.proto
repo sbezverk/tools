@@ -1,0 +1,70 @@
+/* ----------------------------------------------------------------------------
+ * adjacency.proto - Adjacency protobuf definitions
+ *
+ * Based on CiscoDevNet nx-telemetry-proto adjacency schema.
+ * ----------------------------------------------------------------------------
+ */
+
+syntax = "proto3";
+
+package adjacency;
+
+option go_package = "./;adjacency";
+
+option cc_enable_arenas = true;
+
+/* Adjacency address family
+ */
+enum AdjacencyAddressFamily {
+    ADJACENCY_ADDRESS_FAMILY_UNKNOWN = 0;
+    ADJACENCY_ADDRESS_FAMILY_IPV4 = 1;
+    ADJACENCY_ADDRESS_FAMILY_IPV6 = 2;
+}
+
+/* Adjacency event type
+ */
+enum AdjacencyEventType {
+    ADJACENCY_EVENT_TYPE_NO_EVENT = 0;
+    ADJACENCY_EVENT_TYPE_ADD = 1;
+    ADJACENCY_EVENT_TYPE_DELETE = 2;
+    ADJACENCY_EVENT_TYPE_UPDATE = 3;
+    ADJACENCY_EVENT_TYPE_DOWNLOAD = 4;
+    ADJACENCY_EVENT_TYPE_DOWNLOAD_DONE = 5;
+}
+
+/* Adjacency message
+ */
+message NxAdjacencyProto {
+    // IP address
+    string ip_address = 1;
+
+    // MAC address
+    string mac_address = 2;
+
+    // Interface name
+    string interface_name = 3;
+
+    // Physical interface name
+    string physical_interface_name = 4;
+
+    // VRF name
+    string vrf_name = 5;
+
+    // Preference
+    uint32 preference = 6;
+
+    // Source for the adjacency
+    string source = 7;
+
+    // Address family for the adjacency
+    AdjacencyAddressFamily address_family = 8;
+
+    // Adjacency event type
+    AdjacencyEventType event_type = 9;
+
+    // Timestamp
+    uint64 timestamp = 10;
+
+    // MAC associated with multiple IPs
+    repeated string addrlist = 11;
+}
