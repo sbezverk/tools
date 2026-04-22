@@ -1,7 +1,9 @@
 package grpc_feeder
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"net"
 	"time"
 
@@ -82,7 +84,13 @@ func (srv *grpcSrv) worker(session mdtdialout.GRPCMdtDialout_MdtDialoutServer,
 				// Before sending the message, check if gRPC session has not been canceled
 				if status.Code(session.Context().Err()) == codes.Canceled {
 					select {
-					case eCh <- fmt.Errorf("connection with peer %s has been canceled", producer.String()):
+					case eCh <- fmt.Errorf("connection with peer %s has been canceled: %w", producer.String(), context.Canceled):
+					case <-srv.stopCh:
+						return
+					}
+				} else if err == io.EOF {
+					select {
+					case eCh <- fmt.Errorf("connection with peer %s has been closed cleanly: %w", producer.String(), io.EOF):
 					case <-srv.stopCh:
 						return
 					}
