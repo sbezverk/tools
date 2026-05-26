@@ -17,6 +17,16 @@ go_library(
 )
 
 go_library(
+    name = "ipv6_route",
+    srcs = ["ipv6_routes/route/schema.pb.go"],
+    importpath = "github.com/sbezverk/tools/telemetry_feeder/proto/ios-xr-rib/ipv6_routes/route",
+    deps = [
+        "@org_golang_google_protobuf//reflect/protoreflect:go_default_library",
+        "@org_golang_google_protobuf//runtime/protoimpl:go_default_library",
+    ],
+)
+
+go_library(
     name = "backup_route",
     srcs = ["backup_routes/backup_route/schema.pb.go"],
     importpath = "github.com/sbezverk/tools/telemetry_feeder/proto/ios-xr-rib/backup_routes/backup_route",

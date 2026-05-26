@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-//Path: Cisco-IOS-XR-ip-rib-oper:rib/vrfs/vrf/afs/af/safs/saf/ip-rib-route-table-names/ip-rib-route-table-name/routes/route
+//Path: Cisco-IOS-XR-ip-rib-oper:ipv6-rib/vrfs/vrf/afs/af/safs/saf/ip-rib-route-table-names/ip-rib-route-table-name/routes/route
 
-package cisco_ios_xr_ip_rib_oper.rib.vrfs.vrf.afs.af.safs.saf.ip_rib_route_table_names.ip_rib_route_table_name.routes.route;
+package cisco_ios_xr_ip_rib_oper.ipv6_rib.vrfs.vrf.afs.af.safs.saf.ip_rib_route_table_names.ip_rib_route_table_name.routes.route;
 
-option go_package = "github.com/sbezverk/tools/telemetry_feeder/proto/ios-xr-rib/./routes/route;route";
+option go_package = "github.com/sbezverk/tools/telemetry_feeder/proto/ios-xr-rib/./ipv6_routes/route;route";
 
 // Information of a rib route head and rib proto route
 message rib_edm_route_KEYS {
@@ -605,6 +605,7 @@ message rib_edm_drop_route_info {
     // Timestamp for updating drop route to FIB
     uint64 update_time = 3;
 }
+
 
 //                                 Apache License
 //                           Version 2.0, January 2004
