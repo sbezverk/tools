@@ -193,7 +193,7 @@ func (srv *udpFeeder) worker() error {
 				srv.transportBytesReceivedTotal.Add(int64(n))
 				feedMsg, err := feeder.MakeFeederMsgFromJson(buf[:n], n, feeder.TransportUDP)
 				if err != nil {
-					srv.payloadBytesReceivedTotal.Add(int64(n))
+					// payloadBytesReceivedTotal counts decoded payload bytes; malformed datagrams contribute 0.
 					if !srv.publishFeed(&feeder.Feed{
 						ProducerAddr: producerAddr,
 						Err:          err,

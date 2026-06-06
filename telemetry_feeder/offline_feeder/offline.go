@@ -65,6 +65,7 @@ func (o *offFeeder) retrieve() {
 			select {
 			case <-o.stop:
 				ticker.Stop()
+				close(o.feed)
 				return
 			case o.feed <- f:
 			}
