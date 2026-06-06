@@ -173,7 +173,7 @@ message rib_edm_ip_addr_t {
     // IPv4 address type
     string ipv4 = 3;
     // IPv6 address type
-    rib_in6_addr_t ipv6 = 4;
+    string ipv6 = 4;
 }
 
 // IPv4/IPv6 IP address and Prefix length

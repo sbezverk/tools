@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/golang/glog"
@@ -15,10 +16,15 @@ type offFeeder struct {
 	file *os.File
 	feed chan *feeder.Feed
 	stop chan struct{}
+	once sync.Once
 }
 
 func (o *offFeeder) GetFeed() chan *feeder.Feed {
 	return o.feed
+}
+
+func (o *offFeeder) GetStatsJson() ([]byte, error) {
+	return nil, fmt.Errorf("stats are not supported for offline feeder")
 }
 
 func (o *offFeeder) retrieve() {
@@ -56,14 +62,22 @@ func (o *offFeeder) retrieve() {
 			copy(f.TelemetryMsg, b)
 			f.Err = nil
 			// Sending recieved Telemetry message for processing
-			o.feed <- f
+			select {
+			case <-o.stop:
+				ticker.Stop()
+				close(o.feed)
+				return
+			case o.feed <- f:
+			}
 		}
 	}
 }
 
 func (o *offFeeder) Stop() {
-	close(o.stop)
-	o.file.Close()
+	o.once.Do(func() {
+		close(o.stop)
+		o.file.Close()
+	})
 }
 
 func New(fn string) (feeder.Feeder, error) {
