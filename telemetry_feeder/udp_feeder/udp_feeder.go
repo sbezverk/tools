@@ -170,6 +170,8 @@ func (srv *udpFeeder) worker() error {
 					ProducerAddr: producerAddr,
 					TelemetryMsg: nil,
 					Err:          err,
+					Transport:    feeder.TransportUDP,
+					Encoding:     feeder.EncodingJSON,
 				}) {
 					return nil
 				}

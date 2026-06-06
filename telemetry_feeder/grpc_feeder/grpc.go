@@ -222,6 +222,9 @@ func (srv *grpcSrv) worker(session mdtdialout.GRPCMdtDialout_MdtDialoutServer,
 			}
 			f := &feeder.Feed{
 				ProducerAddr: producer,
+				Transport:    feeder.TransportGRPC,
+				Encoding:     feeder.EncodingGPB,
+				Framing:      feeder.FramingNone,
 			}
 			data := msg.GetData()
 			f.TelemetryMsg = make([]byte, len(data))
