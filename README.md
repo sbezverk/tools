@@ -350,12 +350,12 @@ const (
 
 // A single telemetry event delivered to the caller.
 type Feed struct {
-    ProducerAddr net.Addr.       // source address of the sender
-    TelemetryMsg []byte          // raw serialised protobuf payload
-    Err          error           // non-nil on transport error
-	Transport    Transport       // gRPC ot UDP
-	Encoding     PayloadEncoding // protobuf ot json
-	Framing      Framing         // none, cisco-xr-st or cisco-nxos-udp
+    ProducerAddr net.Addr        // source address of the sender
+    TelemetryMsg []byte          // raw telemetry payload (encoding depends on Encoding)
+    Err          error           // non-nil on transport or decode error
+ 	Transport    Transport       // grpc or udp
+ 	Encoding     PayloadEncoding // gpb or json
+ 	Framing      Framing         // none, cisco-xr-st, or cisco-nxos-udp
 }
 
 type Feeder interface {
