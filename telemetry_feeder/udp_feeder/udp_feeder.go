@@ -96,6 +96,12 @@ func updateMax(max *atomic.Int64, value int64) {
 }
 
 func (srv *udpFeeder) publishFeed(item *feeder.Feed) bool {
+	// Ensure a closed stopCh always prevents publishing, even if the send would not block.
+	select {
+	case <-srv.stopCh:
+		return false
+	default:
+	}
 	queueDepthAfterSend := int64(len(srv.feed) + 1)
 	if queueDepthAfterSend > int64(cap(srv.feed)) {
 		queueDepthAfterSend = int64(cap(srv.feed))
@@ -172,6 +178,7 @@ func (srv *udpFeeder) worker() error {
 					Err:          err,
 					Transport:    feeder.TransportUDP,
 					Encoding:     feeder.EncodingJSON,
+					Framing:      feeder.FramingNone,
 				}) {
 					return nil
 				}
@@ -191,6 +198,7 @@ func (srv *udpFeeder) worker() error {
 						Err:          err,
 						Transport:    feeder.TransportUDP,
 						Encoding:     feeder.EncodingJSON,
+						Framing:      feeder.FramingNone,
 					}) {
 						return nil
 					}
