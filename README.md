@@ -335,11 +335,27 @@ Defines the common interface consumed by all three transport implementations
 (gRPC, UDP, offline). Callers depend only on this interface and are transport-agnostic.
 
 ```go
+const (
+	TransportGRPC Transport = "grpc"
+	TransportUDP  Transport = "udp"
+	TransportTCP  Transport = "tcp"
+
+	EncodingGPB  PayloadEncoding = "gpb"
+	EncodingJSON PayloadEncoding = "json"
+
+	FramingNone         Framing = "none"
+	FramingCiscoXRST    Framing = "cisco-xr-st"
+	FramingCiscoNXOSUDP Framing = "cisco-nxos-udp"
+)
+
 // A single telemetry event delivered to the caller.
 type Feed struct {
-    ProducerAddr net.Addr // source address of the sender
-    TelemetryMsg []byte   // raw serialised protobuf payload
-    Err          error    // non-nil on transport error
+    ProducerAddr net.Addr.       // source address of the sender
+    TelemetryMsg []byte          // raw serialised protobuf payload
+    Err          error           // non-nil on transport error
+	Transport    Transport       // gRPC ot UDP
+	Encoding     PayloadEncoding // protobuf ot json
+	Framing      Framing         // none, cisco-xr-st or cisco-nxos-udp
 }
 
 type Feeder interface {
