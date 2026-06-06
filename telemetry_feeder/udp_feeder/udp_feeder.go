@@ -46,7 +46,7 @@ func (srv *udpFeeder) Stop() {
 func (srv *udpFeeder) statsSnapshot() feeder.StatsSnapshot {
 	return feeder.StatsSnapshot{
 		Transport:                   "udp",
-		StartTime:                   srv.startTime,
+		StartTime:                   srv.startTime.UTC(),
 		UptimeSeconds:               int64(time.Since(srv.startTime).Seconds()),
 		MessagesReceivedTotal:       srv.messagesReceivedTotal.Load(),
 		PayloadBytesReceivedTotal:   srv.payloadBytesReceivedTotal.Load(),
@@ -131,7 +131,7 @@ func New(addr string) (feeder.Feeder, error) {
 		conn:      conn,
 		stopCh:    make(chan struct{}),
 		feed:      make(chan *feeder.Feed, feedQueueCapacity),
-		startTime: time.Now().UTC(),
+		startTime: time.Now(),
 	}
 
 	go srv.worker()

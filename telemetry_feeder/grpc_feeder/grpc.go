@@ -59,7 +59,7 @@ func (srv *grpcSrv) Stop() {
 func (srv *grpcSrv) statsSnapshot() feeder.StatsSnapshot {
 	return feeder.StatsSnapshot{
 		Transport:                   "grpc",
-		StartTime:                   srv.startTime,
+		StartTime:                   srv.startTime.UTC(),
 		UptimeSeconds:               int64(time.Since(srv.startTime).Seconds()),
 		MessagesReceivedTotal:       srv.messagesReceivedTotal.Load(),
 		PayloadBytesReceivedTotal:   srv.payloadBytesReceivedTotal.Load(),
@@ -140,7 +140,7 @@ func New(addr string) (feeder.Feeder, error) {
 		conn:      conn,
 		stopCh:    make(chan struct{}),
 		feed:      make(chan *feeder.Feed, feedQueueCapacity),
-		startTime: time.Now().UTC(),
+		startTime: time.Now(),
 		gSrv: grpc.NewServer(
 			grpc.MaxRecvMsgSize(MaxRcvMsgSize),
 			grpc.KeepaliveParams(keepalive.ServerParameters{Time: time.Second * 30, Timeout: time.Second * 10}),

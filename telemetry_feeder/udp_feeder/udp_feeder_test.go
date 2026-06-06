@@ -71,8 +71,17 @@ func TestQueuedDatagramsKeepIndependentPayloads(t *testing.T) {
 		t.Fatalf("timed out waiting for two datagrams, got %d", got)
 	}
 
-	firstFeed := <-f.GetFeed()
-	secondFeed := <-f.GetFeed()
+	var firstFeed, secondFeed *feeder.Feed
+	select {
+	case firstFeed = <-f.GetFeed():
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for first feed")
+	}
+	select {
+	case secondFeed = <-f.GetFeed():
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for second feed")
+	}
 	if !bytes.Equal(firstFeed.TelemetryMsg, firstPayload) {
 		t.Fatalf("first payload mismatch, want %q got %q", firstPayload, firstFeed.TelemetryMsg)
 	}
