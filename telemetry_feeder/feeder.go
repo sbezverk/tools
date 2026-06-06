@@ -52,7 +52,17 @@ func MakeFeederMsgFromJson(b []byte, n int, transport Transport) (Feed, error) {
 	}
 
 	msg := b[:n]
-	if msg[0] == '{' {
+	// JSON may legally start with whitespace; look for the first non-whitespace byte.
+	i := 0
+	for i < len(msg) {
+		switch msg[i] {
+		case ' ', '\t', '\n', '\r':
+			i++
+			continue
+		}
+		break
+	}
+	if i < len(msg) && (msg[i] == '{' || msg[i] == '[') {
 		// Direct JSON, just build the Feed Message with the payload
 		m.Transport = transport
 		m.Encoding = EncodingJSON
@@ -83,8 +93,18 @@ func MakeFeederMsgFromJson(b []byte, n int, transport Transport) (Feed, error) {
 		m.Framing = FramingCiscoNXOSUDP
 		m.TelemetryMsg = make([]byte, payloadLength)
 		copy(m.TelemetryMsg, msg[6:])
-		if m.TelemetryMsg[0] != '{' {
-			return Feed{}, fmt.Errorf("Cisco NX-OS UDP framing payload does not start with JSON object")
+		// JSON may legally start with whitespace; look for the first non-whitespace byte.
+		j := 0
+		for j < len(m.TelemetryMsg) {
+			switch m.TelemetryMsg[j] {
+			case ' ', '\t', '\n', '\r':
+				j++
+				continue
+			}
+			break
+		}
+		if j >= len(m.TelemetryMsg) || (m.TelemetryMsg[j] != '{' && m.TelemetryMsg[j] != '[') {
+			return Feed{}, fmt.Errorf("Cisco NX-OS UDP framing payload does not start with JSON value")
 		}
 		return m, nil
 	}
@@ -102,8 +122,17 @@ func MakeFeederMsgFromJson(b []byte, n int, transport Transport) (Feed, error) {
 	m.Framing = FramingCiscoXRST
 	m.TelemetryMsg = make([]byte, int(payloadLength))
 	copy(m.TelemetryMsg, msg[12:])
-	if m.TelemetryMsg[0] != '{' {
-		return Feed{}, fmt.Errorf("Cisco XR ST framing payload does not start with JSON object")
+	j := 0
+	for j < len(m.TelemetryMsg) {
+		switch m.TelemetryMsg[j] {
+		case ' ', '\t', '\n', '\r':
+			j++
+			continue
+		}
+		break
+	}
+	if j >= len(m.TelemetryMsg) || (m.TelemetryMsg[j] != '{' && m.TelemetryMsg[j] != '[') {
+		return Feed{}, fmt.Errorf("Cisco XR ST framing payload does not start with JSON value")
 	}
 	return m, nil
 }
