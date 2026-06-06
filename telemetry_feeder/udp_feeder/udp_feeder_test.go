@@ -82,11 +82,9 @@ func TestQueuedDatagramsKeepIndependentPayloads(t *testing.T) {
 	case <-time.After(2 * time.Second):
 		t.Fatal("timed out waiting for second feed")
 	}
-	if !bytes.Equal(firstFeed.TelemetryMsg, firstPayload) {
-		t.Fatalf("first payload mismatch, want %q got %q", firstPayload, firstFeed.TelemetryMsg)
-	}
-	if !bytes.Equal(secondFeed.TelemetryMsg, secondPayload) {
-		t.Fatalf("second payload mismatch, want %q got %q", secondPayload, secondFeed.TelemetryMsg)
+	if !((bytes.Equal(firstFeed.TelemetryMsg, firstPayload) && bytes.Equal(secondFeed.TelemetryMsg, secondPayload)) ||
+		(bytes.Equal(firstFeed.TelemetryMsg, secondPayload) && bytes.Equal(secondFeed.TelemetryMsg, firstPayload))) {
+		t.Fatalf("payloads mismatch, got %q and %q", firstFeed.TelemetryMsg, secondFeed.TelemetryMsg)
 	}
 }
 

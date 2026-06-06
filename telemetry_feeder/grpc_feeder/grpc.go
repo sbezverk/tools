@@ -185,6 +185,7 @@ func (srv *grpcSrv) worker(session mdtdialout.GRPCMdtDialout_MdtDialoutServer,
 					srv.receiveErrorsTotal.Add(1)
 					srv.receiveTimeoutErrorsTotal.Add(1)
 				case "closed":
+					srv.receiveErrorsTotal.Add(1)
 					srv.receiveClosedTotal.Add(1)
 				case "other":
 					srv.receiveErrorsTotal.Add(1)
