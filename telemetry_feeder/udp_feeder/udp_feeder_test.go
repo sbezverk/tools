@@ -2,11 +2,14 @@ package udp_feeder
 
 import (
 	"bytes"
+	"encoding/json"
 	"net"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	feeder "github.com/sbezverk/tools/telemetry_feeder"
 )
 
 func TestNewReceivesDatagram(t *testing.T) {
@@ -37,6 +40,142 @@ func TestNewReceivesDatagram(t *testing.T) {
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("timed out waiting for datagram")
+	}
+}
+
+func TestQueuedDatagramsKeepIndependentPayloads(t *testing.T) {
+	f, addr := newTestFeeder(t)
+	defer f.Stop()
+
+	conn := newUDPClient(t)
+	defer conn.Close()
+
+	firstPayload := []byte(`{"payload":"first-00000000"}`)
+	secondPayload := []byte(`{"payload":"second-0000000"}`)
+	if len(firstPayload) != len(secondPayload) {
+		t.Fatalf("test payload lengths must match, got %d and %d", len(firstPayload), len(secondPayload))
+	}
+
+	if _, err := conn.WriteToUDP(firstPayload, addr); err != nil {
+		t.Fatalf("failed to send first datagram: %v", err)
+	}
+	if _, err := conn.WriteToUDP(secondPayload, addr); err != nil {
+		t.Fatalf("failed to send second datagram: %v", err)
+	}
+
+	deadline := time.Now().Add(2 * time.Second)
+	for f.statsSnapshot().MessagesReceivedTotal < 2 && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+	}
+	if got := f.statsSnapshot().MessagesReceivedTotal; got != 2 {
+		t.Fatalf("timed out waiting for two datagrams, got %d", got)
+	}
+
+	firstFeed := <-f.GetFeed()
+	secondFeed := <-f.GetFeed()
+	if !bytes.Equal(firstFeed.TelemetryMsg, firstPayload) {
+		t.Fatalf("first payload mismatch, want %q got %q", firstPayload, firstFeed.TelemetryMsg)
+	}
+	if !bytes.Equal(secondFeed.TelemetryMsg, secondPayload) {
+		t.Fatalf("second payload mismatch, want %q got %q", secondPayload, secondFeed.TelemetryMsg)
+	}
+}
+
+func TestMalformedDatagramPublishesErrorFeed(t *testing.T) {
+	f, addr := newTestFeeder(t)
+	defer f.Stop()
+
+	conn := newUDPClient(t)
+	defer conn.Close()
+
+	payload := []byte("not-json")
+	if _, err := conn.WriteToUDP(payload, addr); err != nil {
+		t.Fatalf("failed to send test datagram: %v", err)
+	}
+
+	var got *feeder.Feed
+	select {
+	case got = <-f.GetFeed():
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for error feed")
+	}
+
+	if got == nil {
+		t.Fatal("expected feed item, got nil")
+	}
+	if got.Err == nil {
+		t.Fatal("expected error feed item, got nil error")
+	}
+	if got.TelemetryMsg != nil {
+		t.Fatalf("expected nil telemetry payload for error feed, got %q", got.TelemetryMsg)
+	}
+	if got.ProducerAddr == nil {
+		t.Fatal("expected producer address to be populated")
+	}
+	if got.Transport != feeder.TransportUDP {
+		t.Fatalf("transport mismatch, want %q got %q", feeder.TransportUDP, got.Transport)
+	}
+	if got.Encoding != feeder.EncodingJSON {
+		t.Fatalf("encoding mismatch, want %q got %q", feeder.EncodingJSON, got.Encoding)
+	}
+
+	stats := f.statsSnapshot()
+	if stats.MessagesReceivedTotal != 1 {
+		t.Fatalf("messages_received_total mismatch, want 1 got %d", stats.MessagesReceivedTotal)
+	}
+	if stats.FeedItemsEnqueuedTotal != 1 {
+		t.Fatalf("feed_items_enqueued_total mismatch, want 1 got %d", stats.FeedItemsEnqueuedTotal)
+	}
+	if stats.FeedErrorItemsEnqueuedTotal != 1 {
+		t.Fatalf("feed_error_items_enqueued_total mismatch, want 1 got %d", stats.FeedErrorItemsEnqueuedTotal)
+	}
+}
+
+func TestStatsAfterDatagram(t *testing.T) {
+	f, addr := newTestFeeder(t)
+	defer f.Stop()
+
+	conn := newUDPClient(t)
+	defer conn.Close()
+
+	payload := []byte(`{"encoding_path":"rib","data":[{"vrfName":"default"}]}`)
+	if _, err := conn.WriteToUDP(payload, addr); err != nil {
+		t.Fatalf("failed to send test datagram: %v", err)
+	}
+
+	select {
+	case <-f.GetFeed():
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for datagram")
+	}
+
+	statsBytes, err := f.GetStatsJson()
+	if err != nil {
+		t.Fatalf("failed to marshal stats: %v", err)
+	}
+
+	var stats feeder.StatsSnapshot
+	if err := json.Unmarshal(statsBytes, &stats); err != nil {
+		t.Fatalf("failed to unmarshal stats: %v", err)
+	}
+
+	if stats.Transport != "udp" {
+		t.Fatalf("transport mismatch, want udp got %q", stats.Transport)
+	}
+	if stats.MessagesReceivedTotal != 1 {
+		t.Fatalf("messages_received_total mismatch, want 1 got %d", stats.MessagesReceivedTotal)
+	}
+	if stats.PayloadBytesReceivedTotal != int64(len(payload)) {
+		t.Fatalf("payload_bytes_received_total mismatch, want %d got %d", len(payload), stats.PayloadBytesReceivedTotal)
+	}
+	if stats.TransportBytesReceivedTotal != int64(len(payload)) {
+		t.Fatalf("transport_bytes_received_total mismatch, want %d got %d", len(payload), stats.TransportBytesReceivedTotal)
+	}
+	if stats.FeedItemsEnqueuedTotal != 1 {
+		t.Fatalf("feed_items_enqueued_total mismatch, want 1 got %d", stats.FeedItemsEnqueuedTotal)
+	}
+	if stats.FeedQueueCapacity != feedQueueCapacity {
+		t.Fatalf("feed_queue_capacity mismatch, want %d got %d", feedQueueCapacity, stats.FeedQueueCapacity)
 	}
 }
 

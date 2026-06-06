@@ -343,10 +343,14 @@ type Feed struct {
 }
 
 type Feeder interface {
+    GetStatsJson() ([]byte, error)
     GetFeed() chan *Feed
     Stop()
 }
 ```
+
+`GetStatsJson` returns a transport-normalized stats snapshot. UDP and gRPC
+use the same JSON counter names, with `transport` set to `udp` or `grpc`.
 
 **Sentinel errors:**
 
