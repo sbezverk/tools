@@ -239,6 +239,9 @@ func (srv *grpcSrv) worker(session mdtdialout.GRPCMdtDialout_MdtDialoutServer,
 				ProducerAddr: producer,
 				TelemetryMsg: nil,
 				Err:          err,
+				Transport:    feeder.TransportGRPC,
+				Encoding:     feeder.EncodingGPB,
+				Framing:      feeder.FramingNone,
 			}) {
 				return nil
 			}

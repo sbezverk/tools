@@ -24,7 +24,7 @@ func (o *offFeeder) GetFeed() chan *feeder.Feed {
 }
 
 func (o *offFeeder) GetStatsJson() ([]byte, error) {
-	return nil, nil
+	return nil, fmt.Errorf("stats are not supported for offline feeder")
 }
 
 func (o *offFeeder) retrieve() {

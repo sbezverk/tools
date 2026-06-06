@@ -180,10 +180,10 @@ func (srv *udpFeeder) worker() error {
 				continue
 			} else {
 				srv.messagesReceivedTotal.Add(1)
-				srv.payloadBytesReceivedTotal.Add(int64(n))
 				srv.transportBytesReceivedTotal.Add(int64(n))
 				feedMsg, err := feeder.MakeFeederMsgFromJson(buf[:n], n, feeder.TransportUDP)
 				if err != nil {
+					srv.payloadBytesReceivedTotal.Add(int64(n))
 					if !srv.publishFeed(&feeder.Feed{
 						ProducerAddr: producerAddr,
 						Err:          err,
@@ -194,6 +194,7 @@ func (srv *udpFeeder) worker() error {
 					}
 					continue
 				}
+				srv.payloadBytesReceivedTotal.Add(int64(len(feedMsg.TelemetryMsg)))
 				feedMsg.ProducerAddr = producerAddr
 				if !srv.publishFeed(&feedMsg) {
 					return nil
