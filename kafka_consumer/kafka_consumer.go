@@ -174,13 +174,13 @@ func (h *consumerGroupHandler) Cleanup(sarama.ConsumerGroupSession) error {
 }
 
 type Message struct {
-	msg   *sarama.ConsumerMessage
-	ackCh chan error
+	Msg   *sarama.ConsumerMessage
+	AckCh chan error
 }
 
 type AckResult struct {
-	msg *sarama.ConsumerMessage
-	err error
+	Msg *sarama.ConsumerMessage
+	Err error
 }
 
 // ConsumeClaim must start a consumer loop of ConsumerGroupClaim's Messages().
@@ -222,11 +222,11 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 	for {
 		select {
 		case ack := <-ackResult:
-			if ack.err != nil {
-				glog.Errorf("Worker failed to process message: %v", ack.err)
-				session.MarkMessage(ack.msg, ack.err.Error())
+			if ack.Err != nil {
+				glog.Errorf("Worker failed to process message: %v", ack.Err)
+				session.MarkMessage(ack.Msg, ack.Err.Error())
 			} else {
-				session.MarkMessage(ack.msg, "")
+				session.MarkMessage(ack.Msg, "")
 			}
 		case msg := <-claim.Messages():
 			if msg == nil {
@@ -239,7 +239,7 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 			}
 
 			// Send message to worker pool
-			m := Message{msg: msg, ackCh: make(chan error, 1)}
+			m := Message{Msg: msg, AckCh: make(chan error, 1)}
 			select {
 			case workCh <- m:
 				// Message sent to worker
@@ -250,8 +250,8 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 				// For now, wait uncoditionally for ack from the worker before marking the message. This ensures we don't mark messages as processed until they have been handled.
 				go func(m Message) {
 					select {
-					case err := <-m.ackCh:
-						ackResult <- AckResult{msg: m.msg, err: err}
+					case err := <-m.AckCh:
+						ackResult <- AckResult{Msg: m.Msg, Err: err}
 					case <-session.Context().Done():
 						return
 					}
