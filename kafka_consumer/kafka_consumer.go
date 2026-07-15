@@ -11,6 +11,15 @@ import (
 	"github.com/golang/glog"
 )
 
+type ObservedKafkaMessage struct {
+	Timestamp time.Time
+	Topic     string
+	Partition int32
+	Offset    int64
+	Body      map[string]any
+	Raw       []byte
+}
+
 type KafkaConsumerConfig struct {
 	Brokers        []string `yaml:"brokers"`
 	ConsumerGroups []string `yaml:"consumer-groups"`
