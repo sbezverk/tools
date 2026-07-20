@@ -206,7 +206,9 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 		}
 	}
 
-	glog.Infof("Starting consumer for topic %s, partition %d", topic, claim.Partition())
+	if glog.V(6) {
+		glog.Infof("Starting consumer for topic %s, partition %d", topic, claim.Partition())
+	}
 
 	// Create work channel with buffer
 	workCh := make(chan Message, workChannelBuffer)
@@ -222,7 +224,9 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 	defer func() {
 		close(workCh)
 		workerWg.Wait()
-		glog.Infof("Consumer for topic %s partition %d stopped", topic, claim.Partition())
+		if glog.V(6) {
+			glog.Infof("Consumer for topic %s partition %d stopped", topic, claim.Partition())
+		}
 	}()
 
 	// Main message consumption loop
@@ -242,7 +246,7 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 				return nil
 			}
 
-			if glog.V(5) {
+			if glog.V(6) {
 				glog.Infof("Received message from topic %s: partition=%d offset=%d size=%d",
 					topic, msg.Partition, msg.Offset, len(msg.Value))
 			}
@@ -298,7 +302,9 @@ func (c *consumer) signalReady() {
 }
 
 func (c *consumer) Start() {
-	glog.Infof("Starting Kafka consumer group %s for %d topics", c.groupID, len(c.topics))
+	if glog.V(6) {
+		glog.Infof("Starting Kafka consumer group %s for %d topics", c.groupID, len(c.topics))
+	}
 
 	// Get topic names
 	topicNames := make([]string, len(c.topics))
@@ -324,7 +330,9 @@ func (c *consumer) Start() {
 
 			// Check if context was cancelled, signaling that the consumer should stop.
 			if c.ctx.Err() != nil {
-				glog.Info("Consumer group stopped")
+				if glog.V(6) {
+					glog.Info("Consumer group stopped")
+				}
 				return
 			}
 			c.ensureReadyChannel()
@@ -334,18 +342,24 @@ func (c *consumer) Start() {
 	// Await till the consumer has been set up
 	select {
 	case <-ready:
-		glog.Infof("Kafka consumer group ready and consuming")
+		if glog.V(6) {
+			glog.Infof("Kafka consumer group ready and consuming")
+		}
 	case <-time.After(startupReadyTimeout):
 		glog.Warningf("Kafka consumer group did not become ready within %v; consume loop will continue retrying in the background", startupReadyTimeout)
 		return
 	case <-c.ctx.Done():
-		glog.Infof("Kafka consumer startup canceled before ready")
+		if glog.V(6) {
+			glog.Infof("Kafka consumer startup canceled before ready")
+		}
 		return
 	}
 }
 
 func (c *consumer) Stop() {
-	glog.Info("Stopping Kafka consumer group...")
+	if glog.V(6) {
+		glog.Info("Stopping Kafka consumer group...")
+	}
 
 	// Step 1: Cancel context to ask Consume() loop to stop.
 	c.cancel()
@@ -356,7 +370,9 @@ func (c *consumer) Stop() {
 	if err := c.consumerGroup.Close(); err != nil {
 		glog.Errorf("Error closing consumer group: %v", err)
 	} else {
-		glog.Info("Consumer group closed successfully")
+		if glog.V(6) {
+			glog.Info("Consumer group closed successfully")
+		}
 	}
 
 	// Step 3: Wait for consumer group loop to finish with timeout.
@@ -368,7 +384,9 @@ func (c *consumer) Stop() {
 
 	select {
 	case <-done:
-		glog.Info("Consumer group loop stopped gracefully")
+		if glog.V(6) {
+			glog.Info("Consumer group loop stopped gracefully")
+		}
 	case <-time.After(shutdownTimeout):
 		glog.Warning("Shutdown timeout exceeded for consumer group loop")
 	}
@@ -396,7 +414,7 @@ func (c *consumer) workerBatched(id int, topicCfg TopicDescr, workCh <-chan Mess
 		select {
 		case topicCfg.BatchChannel <- batchCopy:
 			// Successfully delivered batch
-			if glog.V(5) {
+			if glog.V(6) {
 				glog.Infof("Worker %d: flushed batch of %d messages for topic %s", id, len(batch), topicCfg.Name)
 			}
 			batch = batch[:0] // Reset batch
@@ -415,7 +433,7 @@ func (c *consumer) workerBatched(id int, topicCfg TopicDescr, workCh <-chan Mess
 			}
 
 			batch = append(batch, msg)
-			if glog.V(5) {
+			if glog.V(6) {
 				glog.Infof("Worker %d: received message for topic %s, batch size now %d", id, topicCfg.Name, len(batch))
 			}
 			// Flush when batch reaches target size
