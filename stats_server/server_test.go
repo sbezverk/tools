@@ -172,17 +172,17 @@ func TestAtomicTimeGuard(t *testing.T) {
 	}
 }
 
-func newTestServer(t *testing.T, started time.Time) *Server {
+func newTestServer(t *testing.T, started time.Time) *server {
 	t.Helper()
 
 	s, err := New("127.0.0.1:0", started)
 	if err != nil {
 		t.Fatalf("new server: %v", err)
 	}
-	return s
+	return s.(*server)
 }
 
-func mustRegister(t *testing.T, s *Server, name string, provider StatsProvider) {
+func mustRegister(t *testing.T, s *server, name string, provider StatsProvider) {
 	t.Helper()
 
 	if err := s.RegisterStatsProvider(name, provider); err != nil {
@@ -190,7 +190,7 @@ func mustRegister(t *testing.T, s *Server, name string, provider StatsProvider) 
 	}
 }
 
-func request(s *Server, method, path string) *httptest.ResponseRecorder {
+func request(s *server, method, path string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(method, path, nil)
 	rec := httptest.NewRecorder()
 	s.server.Handler.ServeHTTP(rec, req)

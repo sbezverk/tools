@@ -16,7 +16,18 @@ type errorResponse struct {
 	Error string `json:"error"`
 }
 
-type Server struct {
+type StatsServer interface {
+	Start() error
+	Shutdown(ctx context.Context) error
+
+	Addr() string
+
+	RegisterStatsProvider(name string, provider StatsProvider) error
+}
+
+var _ StatsServer = &server{}
+
+type server struct {
 	addr             string
 	server           *http.Server
 	mu               sync.RWMutex
@@ -24,7 +35,7 @@ type Server struct {
 	processStartedAt time.Time
 }
 
-func New(addr string, processStartedAt time.Time) (*Server, error) {
+func New(addr string, processStartedAt time.Time) (StatsServer, error) {
 	if addr == "" {
 		addr = "127.0.0.1:8080"
 	}
@@ -33,7 +44,7 @@ func New(addr string, processStartedAt time.Time) (*Server, error) {
 	}
 	processStartedAt = processStartedAt.UTC()
 
-	s := &Server{
+	s := &server{
 		addr:             addr,
 		stats:            make(map[string]StatsProvider),
 		processStartedAt: processStartedAt,
@@ -52,7 +63,7 @@ func New(addr string, processStartedAt time.Time) (*Server, error) {
 	return s, nil
 }
 
-func (s *Server) RegisterStatsProvider(name string, provider StatsProvider) error {
+func (s *server) RegisterStatsProvider(name string, provider StatsProvider) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -73,22 +84,22 @@ func (s *Server) RegisterStatsProvider(name string, provider StatsProvider) erro
 	return nil
 }
 
-func (s *Server) ListenAndServe() error {
+func (s *server) Start() error {
 	if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 	return nil
 }
 
-func (s *Server) Shutdown(ctx context.Context) error {
+func (s *server) Shutdown(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }
 
-func (s *Server) Addr() string {
+func (s *server) Addr() string {
 	return s.addr
 }
 
-func (s *Server) healthz(w http.ResponseWriter, r *http.Request) {
+func (s *server) healthz(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)
 		return
@@ -103,7 +114,7 @@ type StatsEnvelope struct {
 	Stats            json.RawMessage `json:"stats"`
 }
 
-func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
+func (s *server) handleStats(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)
 		return
@@ -164,7 +175,7 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, envelope)
 }
 
-func (s *Server) providerNames() []string {
+func (s *server) providerNames() []string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -177,7 +188,7 @@ func (s *Server) providerNames() []string {
 	return providers
 }
 
-func (s *Server) statsProvider(name string) (StatsProvider, bool) {
+func (s *server) statsProvider(name string) (StatsProvider, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -185,7 +196,7 @@ func (s *Server) statsProvider(name string) (StatsProvider, bool) {
 	return provider, ok
 }
 
-func (s *Server) statsProviders() map[string]StatsProvider {
+func (s *server) statsProviders() map[string]StatsProvider {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -196,7 +207,7 @@ func (s *Server) statsProviders() map[string]StatsProvider {
 	return providers
 }
 
-func (s *Server) newStatsEnvelope() StatsEnvelope {
+func (s *server) newStatsEnvelope() StatsEnvelope {
 	now := time.Now().UTC()
 	uptime := int64(now.Sub(s.processStartedAt).Seconds())
 	if uptime < 0 {
