@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "stats_server",
+    srcs = [
+        "server.go",
+        "stats_provider.go",
+    ],
+    importpath = "github.com/sbezverk/tools/stats_server",
+)
+
+go_test(
+    name = "stats_server_test",
+    srcs = ["server_test.go"],
+    embed = [":stats_server"],
+)
