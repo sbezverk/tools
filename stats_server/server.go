@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"sort"
 	"strings"
@@ -29,7 +30,9 @@ var _ StatsServer = &server{}
 
 type server struct {
 	addr             string
+	listener         net.Listener
 	server           *http.Server
+	closeOnce        sync.Once
 	mu               sync.RWMutex
 	stats            map[string]StatsProvider
 	processStartedAt time.Time
@@ -44,8 +47,14 @@ func New(addr string, processStartedAt time.Time) (StatsServer, error) {
 	}
 	processStartedAt = processStartedAt.UTC()
 
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		return nil, fmt.Errorf("listen on stats server address %q: %w", addr, err)
+	}
+
 	s := &server{
-		addr:             addr,
+		addr:             listener.Addr().String(),
+		listener:         listener,
 		stats:            make(map[string]StatsProvider),
 		processStartedAt: processStartedAt,
 	}
@@ -55,7 +64,7 @@ func New(addr string, processStartedAt time.Time) (StatsServer, error) {
 	mux.HandleFunc("/v1/stats", s.handleStats)
 
 	s.server = &http.Server{
-		Addr:              addr,
+		Addr:              s.addr,
 		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
@@ -85,14 +94,27 @@ func (s *server) RegisterStatsProvider(name string, provider StatsProvider) erro
 }
 
 func (s *server) Start() error {
-	if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	if err := s.server.Serve(s.listener); err != nil && !errors.Is(err, http.ErrServerClosed) && !errors.Is(err, net.ErrClosed) {
 		return err
 	}
 	return nil
 }
 
 func (s *server) Shutdown(ctx context.Context) error {
-	return s.server.Shutdown(ctx)
+	shutdownErr := s.server.Shutdown(ctx)
+	if errors.Is(shutdownErr, http.ErrServerClosed) {
+		shutdownErr = nil
+	}
+
+	var listenerErr error
+	s.closeOnce.Do(func() {
+		listenerErr = s.listener.Close()
+	})
+	if errors.Is(listenerErr, net.ErrClosed) {
+		listenerErr = nil
+	}
+
+	return errors.Join(shutdownErr, listenerErr)
 }
 
 func (s *server) Addr() string {

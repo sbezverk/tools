@@ -1,8 +1,10 @@
 package stats_server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -156,6 +158,18 @@ func TestNewDefaultsZeroProcessStartTime(t *testing.T) {
 	}
 }
 
+func TestNewFailsWhenAddressAlreadyInUse(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen test address: %v", err)
+	}
+	defer listener.Close()
+
+	if _, err := New(listener.Addr().String(), time.Now()); err == nil {
+		t.Fatal("New() error=nil, want address-in-use error")
+	}
+}
+
 func TestAtomicTimeGuard(t *testing.T) {
 	var value atomic.Value
 	if got := AtomicTimeGuard(&value); !got.IsZero() {
@@ -179,7 +193,15 @@ func newTestServer(t *testing.T, started time.Time) *server {
 	if err != nil {
 		t.Fatalf("new server: %v", err)
 	}
-	return s.(*server)
+	server := s.(*server)
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		if err := server.Shutdown(ctx); err != nil {
+			t.Errorf("shutdown test server: %v", err)
+		}
+	})
+	return server
 }
 
 func mustRegister(t *testing.T, s *server, name string, provider StatsProvider) {
