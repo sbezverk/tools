@@ -2,6 +2,7 @@ package kafka_consumer
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"strconv"
 	"sync"
@@ -49,6 +50,7 @@ type consumer struct {
 	groupID       string
 	mtx           sync.Mutex
 	ready         chan struct{} // Signals when consumer group is ready
+	maxMessageAge time.Duration
 }
 
 func (c *consumer) GetTopics() []TopicDescr {
@@ -86,11 +88,56 @@ const (
 	startupReadyTimeout = 30 * time.Second
 )
 
+type kafkaConsumerOptions struct {
+	maxMessageAge time.Duration
+}
+
+type KafkaConsumerOption func(*kafkaConsumerOptions) error
+
 // NewKafkaConsumer creates an improved Kafka consumer with bounded memory usage.
 // If the broker is unreachable it retries with exponential backoff (up to 60 s) instead
 // of returning an error immediately, keeping the application alive.
 // The retry loop is aborted when ctx is cancelled (e.g. on SIGINT during startup).
-func NewKafkaConsumer(ctx context.Context, name string, groupID string, cfg *KafkaConsumerConfig) (KafkaConsumer, error) {
+func NewKafkaConsumer(
+	ctx context.Context,
+	name string,
+	groupID string,
+	cfg *KafkaConsumerConfig,
+) (KafkaConsumer, error) {
+	return NewKafkaConsumerWithOpts(ctx, name, groupID, cfg)
+}
+
+func WithMaxMessageAge(age time.Duration) KafkaConsumerOption {
+	return func(opts *kafkaConsumerOptions) error {
+		if age <= 0 {
+			return fmt.Errorf("maximum message age must be positive: %s", age)
+		}
+
+		opts.maxMessageAge = age
+		return nil
+	}
+}
+
+func applyKafkaConsumerOptions(opts ...KafkaConsumerOption) (kafkaConsumerOptions, error) {
+	options := kafkaConsumerOptions{}
+	for _, option := range opts {
+		if option == nil {
+			return kafkaConsumerOptions{}, fmt.Errorf("kafka consumer option is nil")
+		}
+		if err := option(&options); err != nil {
+			return kafkaConsumerOptions{}, fmt.Errorf("invalid Kafka consumer option: %w", err)
+		}
+	}
+
+	return options, nil
+}
+
+func NewKafkaConsumerWithOpts(ctx context.Context, name string, groupID string, cfg *KafkaConsumerConfig, opts ...KafkaConsumerOption) (KafkaConsumer, error) {
+	options, err := applyKafkaConsumerOptions(opts...)
+	if err != nil {
+		return nil, err
+	}
+
 	config := sarama.NewConfig()
 	// Generate unique client ID (auto-seeded rand in Go 1.20+)
 	config.ClientID = groupID + "_" + strconv.Itoa(rand.Intn(100000))
@@ -153,6 +200,7 @@ func NewKafkaConsumer(ctx context.Context, name string, groupID string, cfg *Kaf
 		brokers:       cfg.Brokers,
 		groupID:       groupID,
 		config:        config,
+		maxMessageAge: options.maxMessageAge,
 	}
 	c.topics = make([]TopicDescr, len(cfg.Topics))
 	for i := 0; i < len(cfg.Topics); i++ {
@@ -163,6 +211,10 @@ func NewKafkaConsumer(ctx context.Context, name string, groupID string, cfg *Kaf
 	}
 
 	return c, nil
+}
+
+func isMessageExpired(timestamp time.Time, maxAge time.Duration, now time.Time) bool {
+	return maxAge > 0 && !timestamp.IsZero() && timestamp.Before(now.Add(-maxAge))
 }
 
 // consumerGroupHandler implements sarama.ConsumerGroupHandler for consumer group processing
@@ -245,12 +297,14 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 			if msg == nil {
 				return nil
 			}
-
+			if isMessageExpired(msg.Timestamp, h.consumer.maxMessageAge, time.Now()) {
+				session.MarkMessage(msg, "expired")
+				continue
+			}
 			if glog.V(6) {
 				glog.Infof("Received message from topic %s: partition=%d offset=%d size=%d",
 					topic, msg.Partition, msg.Offset, len(msg.Value))
 			}
-
 			// Send message to worker pool
 			m := Message{Msg: msg, AckCh: make(chan error, 1)}
 			select {
