@@ -6,11 +6,46 @@ import (
 	"math/rand"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/IBM/sarama"
 	"github.com/golang/glog"
 )
+
+type kafkaTopicStats struct {
+	kafkaMessageNilTotal        atomic.Int64
+	kafkaMessagesReceivedTotal  atomic.Int64
+	kafkaMessagesExpiredTotal   atomic.Int64
+	kafkaMessagesProcessedTotal atomic.Int64
+	kafkaMessagesFailedTotal    atomic.Int64
+}
+
+type kafkaConsumerStats struct {
+	kafkaMessageNilTotal        atomic.Int64
+	kafkaMessagesReceivedTotal  atomic.Int64
+	kafkaMessagesExpiredTotal   atomic.Int64
+	kafkaMessagesProcessedTotal atomic.Int64
+	kafkaMessagesFailedTotal    atomic.Int64
+	kafkaMessageAgeMaxSeconds   atomic.Int64
+}
+
+type KafkaTopicStats struct {
+	KafkaMessageNilTotal        int64 `json:"kafka_message_nil_total"`
+	KafkaMessagesReceivedTotal  int64 `json:"kafka_messages_received_total"`
+	KafkaMessagesExpiredTotal   int64 `json:"kafka_messages_expired_total"`
+	KafkaMessagesProcessedTotal int64 `json:"kafka_messages_processed_total"`
+	KafkaMessagesFailedTotal    int64 `json:"kafka_messages_failed_total"`
+}
+
+type KafkaConsumerStats struct {
+	KafkaMessageNilTotal        int64 `json:"kafka_message_nil_total"`
+	KafkaMessagesReceivedTotal  int64 `json:"kafka_messages_received_total"`
+	KafkaMessagesExpiredTotal   int64 `json:"kafka_messages_expired_total"`
+	KafkaMessagesProcessedTotal int64 `json:"kafka_messages_processed_total"`
+	KafkaMessagesFailedTotal    int64 `json:"kafka_messages_failed_total"`
+	KafkaMessageAgeMaxSeconds   int64 `json:"kafka_message_age_max_seconds"`
+}
 
 type ObservedKafkaMessage struct {
 	Timestamp time.Time
@@ -37,7 +72,11 @@ type KafkaConsumer interface {
 	Start()
 	Stop()
 	GetTopics() []TopicDescr
+	GetConsumerStats() *KafkaConsumerStats
+	GetTopicStats(topic string) (*KafkaTopicStats, bool)
 }
+
+var _ KafkaConsumer = &consumer{}
 
 type consumer struct {
 	ctx           context.Context
@@ -51,10 +90,36 @@ type consumer struct {
 	mtx           sync.Mutex
 	ready         chan struct{} // Signals when consumer group is ready
 	maxMessageAge time.Duration
+	consumerStats kafkaConsumerStats
+	topicStats    map[string]*kafkaTopicStats
 }
 
 func (c *consumer) GetTopics() []TopicDescr {
 	return c.topics
+}
+
+func (c *consumer) GetTopicStats(topic string) (*KafkaTopicStats, bool) {
+	if stats, ok := c.topicStats[topic]; ok {
+		return &KafkaTopicStats{
+			KafkaMessageNilTotal:        stats.kafkaMessageNilTotal.Load(),
+			KafkaMessagesReceivedTotal:  stats.kafkaMessagesReceivedTotal.Load(),
+			KafkaMessagesExpiredTotal:   stats.kafkaMessagesExpiredTotal.Load(),
+			KafkaMessagesProcessedTotal: stats.kafkaMessagesProcessedTotal.Load(),
+			KafkaMessagesFailedTotal:    stats.kafkaMessagesFailedTotal.Load(),
+		}, true
+	}
+	return nil, false
+}
+
+func (c *consumer) GetConsumerStats() *KafkaConsumerStats {
+	return &KafkaConsumerStats{
+		KafkaMessageNilTotal:        c.consumerStats.kafkaMessageNilTotal.Load(),
+		KafkaMessagesReceivedTotal:  c.consumerStats.kafkaMessagesReceivedTotal.Load(),
+		KafkaMessagesExpiredTotal:   c.consumerStats.kafkaMessagesExpiredTotal.Load(),
+		KafkaMessagesProcessedTotal: c.consumerStats.kafkaMessagesProcessedTotal.Load(),
+		KafkaMessagesFailedTotal:    c.consumerStats.kafkaMessagesFailedTotal.Load(),
+		KafkaMessageAgeMaxSeconds:   c.consumerStats.kafkaMessageAgeMaxSeconds.Load(),
+	}
 }
 
 // Retry constants for exponential backoff when connecting to the Kafka broker.
@@ -201,12 +266,26 @@ func NewKafkaConsumerWithOpts(ctx context.Context, name string, groupID string, 
 		groupID:       groupID,
 		config:        config,
 		maxMessageAge: options.maxMessageAge,
+		topicStats:    make(map[string]*kafkaTopicStats),
+		consumerStats: kafkaConsumerStats{
+			kafkaMessagesReceivedTotal:  atomic.Int64{},
+			kafkaMessageAgeMaxSeconds:   atomic.Int64{},
+			kafkaMessagesExpiredTotal:   atomic.Int64{},
+			kafkaMessagesProcessedTotal: atomic.Int64{},
+			kafkaMessagesFailedTotal:    atomic.Int64{},
+		},
 	}
 	c.topics = make([]TopicDescr, len(cfg.Topics))
 	for i := 0; i < len(cfg.Topics); i++ {
 		c.topics[i] = TopicDescr{
 			Name:         cfg.Topics[i],
 			BatchChannel: make(chan []Message, workChannelBuffer),
+		}
+		c.topicStats[c.topics[i].Name] = &kafkaTopicStats{
+			kafkaMessagesReceivedTotal:  atomic.Int64{},
+			kafkaMessagesExpiredTotal:   atomic.Int64{},
+			kafkaMessagesProcessedTotal: atomic.Int64{},
+			kafkaMessagesFailedTotal:    atomic.Int64{},
 		}
 	}
 
@@ -215,6 +294,20 @@ func NewKafkaConsumerWithOpts(ctx context.Context, name string, groupID string, 
 
 func isMessageExpired(timestamp time.Time, maxAge time.Duration, now time.Time) bool {
 	return maxAge > 0 && !timestamp.IsZero() && timestamp.Before(now.Add(-maxAge))
+}
+
+func updateMaxMessageAge(maxAgeSeconds *atomic.Int64, timestamp, now time.Time) {
+	if timestamp.IsZero() || !timestamp.Before(now) {
+		return
+	}
+
+	ageSeconds := int64(now.Sub(timestamp) / time.Second)
+	for {
+		currentMax := maxAgeSeconds.Load()
+		if ageSeconds <= currentMax || maxAgeSeconds.CompareAndSwap(currentMax, ageSeconds) {
+			return
+		}
+	}
 }
 
 // consumerGroupHandler implements sarama.ConsumerGroupHandler for consumer group processing
@@ -290,14 +383,39 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 			if ack.Err != nil {
 				glog.Errorf("Worker failed to process message: %v", ack.Err)
 				session.MarkMessage(ack.Msg, ack.Err.Error())
+				h.consumer.consumerStats.kafkaMessagesFailedTotal.Add(1)
+				if _, ok := h.consumer.topicStats[topic]; ok {
+					h.consumer.topicStats[topic].kafkaMessagesFailedTotal.Add(1)
+				}
 			} else {
 				session.MarkMessage(ack.Msg, "")
+				h.consumer.consumerStats.kafkaMessagesProcessedTotal.Add(1)
+				if _, ok := h.consumer.topicStats[topic]; ok {
+					h.consumer.topicStats[topic].kafkaMessagesProcessedTotal.Add(1)
+				}
 			}
-		case msg := <-claim.Messages():
-			if msg == nil {
+		case msg, ok := <-claim.Messages():
+			if !ok {
 				return nil
 			}
-			if isMessageExpired(msg.Timestamp, h.consumer.maxMessageAge, time.Now()) {
+			if msg == nil {
+				h.consumer.consumerStats.kafkaMessageNilTotal.Add(1)
+				if _, ok := h.consumer.topicStats[topic]; ok {
+					h.consumer.topicStats[topic].kafkaMessageNilTotal.Add(1)
+				}
+				return nil
+			}
+			h.consumer.consumerStats.kafkaMessagesReceivedTotal.Add(1)
+			if _, ok := h.consumer.topicStats[topic]; ok {
+				h.consumer.topicStats[topic].kafkaMessagesReceivedTotal.Add(1)
+			}
+			now := time.Now()
+			updateMaxMessageAge(&h.consumer.consumerStats.kafkaMessageAgeMaxSeconds, msg.Timestamp, now)
+			if isMessageExpired(msg.Timestamp, h.consumer.maxMessageAge, now) {
+				h.consumer.consumerStats.kafkaMessagesExpiredTotal.Add(1)
+				if _, ok := h.consumer.topicStats[topic]; ok {
+					h.consumer.topicStats[topic].kafkaMessagesExpiredTotal.Add(1)
+				}
 				session.MarkMessage(msg, "expired")
 				continue
 			}

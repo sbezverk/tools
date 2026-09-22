@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -70,6 +71,32 @@ func TestIsMessageExpired(t *testing.T) {
 				t.Fatalf("isMessageExpired() = %t, want %t", got, tt.wantExpired)
 			}
 		})
+	}
+}
+
+func TestUpdateMaxMessageAge(t *testing.T) {
+	now := time.Date(2026, time.September, 22, 12, 0, 0, 0, time.UTC)
+	var maxAgeSeconds atomic.Int64
+
+	updateMaxMessageAge(&maxAgeSeconds, time.Time{}, now)
+	updateMaxMessageAge(&maxAgeSeconds, now.Add(time.Minute), now)
+	if got := maxAgeSeconds.Load(); got != 0 {
+		t.Fatalf("maximum message age after zero and future timestamps = %d, want 0", got)
+	}
+
+	updateMaxMessageAge(&maxAgeSeconds, now.Add(-10*time.Second), now)
+	if got := maxAgeSeconds.Load(); got != 10 {
+		t.Fatalf("maximum message age = %d, want 10", got)
+	}
+
+	updateMaxMessageAge(&maxAgeSeconds, now.Add(-5*time.Second), now)
+	if got := maxAgeSeconds.Load(); got != 10 {
+		t.Fatalf("maximum message age after newer message = %d, want 10", got)
+	}
+
+	updateMaxMessageAge(&maxAgeSeconds, now.Add(-20*time.Second), now)
+	if got := maxAgeSeconds.Load(); got != 20 {
+		t.Fatalf("maximum message age after older message = %d, want 20", got)
 	}
 }
 
